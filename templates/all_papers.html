@@ -4,7 +4,8 @@
 <h1 class="mt-4">All Reviewed Papers</h1>
 <form id="papers-form" method="post">
     <div class="actions mb-3">
-        <button type="submit" class="btn btn-primary mr-2 mb-2">Move to Unread</button>
+        <button type="submit" name="action" value="move_to_unread" class="btn btn-primary mr-2 mb-2">Move to Unread</button>
+        <button type="submit" name="action" value="move_to_left_swiped" class="btn btn-danger mr-2 mb-2">Move to Swiped Left</button>
         <button type="button" onclick="toggleSelectAll(this)" class="btn btn-secondary mr-2 mb-2">Select All</button>
     </div>
     <table class="table table-striped table-hover">

@@ -1,40 +1,127 @@
-{% extends "base.html" %}
-{% block title %}{{ paper.title }}{% endblock %}
-{% block content %}
-<h1 class="mt-4">{{ paper.title }}</h1>
-<div class="row">
-    <div class="col-md-7">
-        <iframe src="{{ url_for('serve_pdf', filename=pdf_filename) }}" width="100%" height="600px"></iframe>
-    </div>
-    <div class="col-md-5">
-        <h3>Notes</h3>
-        <textarea id="notes" class="form-control" rows="25">{{ notes }}</textarea>
-    </div>
-</div>
-{% endblock %}
-{% block scripts %}
-<script>
-    const notesTextarea = document.getElementById('notes');
-    let timeoutId;
-    notesTextarea.addEventListener('input', function() {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(saveNotes, 1000); // Save after 1 second of inactivity
-    });
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ paper.title }}</title>
+    <style>
+        /* Remove margins and padding */
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000; /* Optional: black background */
+        }
 
-    function saveNotes() {
-        const notes = notesTextarea.value;
-        fetch('', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: new URLSearchParams({'notes': notes})
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'saved') {
-                console.log('Notes saved.');
-            }
+        /* Full-screen PDF iframe */
+        #pdf-iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Notes panel */
+        #notes-panel {
+            position: fixed;
+            bottom: -100%; /* Hidden by default */
+            left: 0;
+            width: 100%;
+            height: 50%; /* Adjust height as needed */
+            background-color: #ffffff;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
+            transition: bottom 0.3s ease-in-out;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Notes textarea */
+        #notes-panel textarea {
+            flex: 1;
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            resize: none;
+        }
+
+        /* Show notes panel */
+        #notes-panel.show {
+            bottom: 0;
+        }
+
+        /* Toggle notes button */
+        #toggle-notes-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1001;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 15px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        /* Button hover effect */
+        #toggle-notes-btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PDF Viewer -->
+    <iframe id="pdf-iframe" src="{{ url_for('serve_pdf', filename=pdf_filename) }}"></iframe>
+
+    <!-- Notes Panel -->
+    <div id="notes-panel">
+        <textarea id="notes" placeholder="Type your notes here...">{{ notes }}</textarea>
+    </div>
+
+    <!-- Toggle Notes Button -->
+    <button id="toggle-notes-btn">Notes</button>
+
+    <script>
+        const notesPanel = document.getElementById('notes-panel');
+        const toggleNotesBtn = document.getElementById('toggle-notes-btn');
+        const notesTextarea = document.getElementById('notes');
+
+        // Toggle notes panel visibility
+        function toggleNotes() {
+            notesPanel.classList.toggle('show');
+        }
+
+        toggleNotesBtn.addEventListener('click', toggleNotes);
+
+        // Auto-save notes after 1 second of inactivity
+        let timeoutId;
+        notesTextarea.addEventListener('input', function() {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(saveNotes, 1000); // Save after 1 second
         });
-    }
-</script>
-{% endblock %}
+
+        function saveNotes() {
+            const notes = notesTextarea.value;
+            fetch('', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: new URLSearchParams({'notes': notes})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'saved') {
+                    console.log('Notes saved.');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
 
