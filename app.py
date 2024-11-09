@@ -11,6 +11,7 @@ REVIEWED_PAPERS_FILE = 'reviewed_papers.json'
 SELECTED_PAPERS_FILE = 'selected_papers.json'  # Unread papers
 IN_REVIEW_PAPERS_FILE = 'in_review_papers.json'
 READ_PAPERS_FILE = 'read_papers.json'
+LEFT_SWIPED_PAPERS_FILE = 'left_swiped_papers.json'
 
 # Load reviewed papers (list of paper IDs)
 if os.path.exists(REVIEWED_PAPERS_FILE):
@@ -39,6 +40,13 @@ if os.path.exists(READ_PAPERS_FILE):
         read_papers = json.load(file)
 else:
     read_papers = []
+
+# Load left-swiped papers
+if os.path.exists(LEFT_SWIPED_PAPERS_FILE):
+    with open(LEFT_SWIPED_PAPERS_FILE, 'r') as file:
+        left_swiped_papers = json.load(file)
+else:
+    left_swiped_papers = []
 
 @app.route('/')
 def index():
@@ -83,7 +91,7 @@ def get_paper():
 
 @app.route('/review_paper', methods=['POST'])
 def review_paper():
-    global selected_papers, read_papers, in_review_papers  # Add global variables
+    global selected_papers, read_papers, in_review_papers, left_swiped_papers  # Add global variables
 
     data = request.json
     paper_id = data['paper_id']
@@ -109,12 +117,17 @@ def review_paper():
             selected_papers.append(paper_data)
             with open(SELECTED_PAPERS_FILE, 'w') as file:
                 json.dump(selected_papers, file)
+    elif action == 'dislike':
+        if paper_id not in [paper['paper_id'] for paper in left_swiped_papers]:
+            left_swiped_papers.append(paper_data)
+            with open(LEFT_SWIPED_PAPERS_FILE, 'w') as file:
+                json.dump(left_swiped_papers, file)
     elif action == 'read':
         if paper_id not in [paper['paper_id'] for paper in read_papers]:
             read_papers.append(paper_data)
             with open(READ_PAPERS_FILE, 'w') as file:
                 json.dump(read_papers, file)
-        # Remove from selected_papers and in_review_papers if present
+        # Remove from other lists if present
         selected_papers = [paper for paper in selected_papers if paper['paper_id'] != paper_id]
         in_review_papers = [paper for paper in in_review_papers if paper['paper_id'] != paper_id]
         with open(SELECTED_PAPERS_FILE, 'w') as file:
@@ -132,6 +145,59 @@ def review_paper():
             json.dump(selected_papers, file)
 
     return jsonify({'status': 'ok'})
+
+@app.route('/all_papers', methods=['GET', 'POST'])
+def all_papers():
+    global selected_papers, read_papers, in_review_papers, left_swiped_papers, reviewed_papers
+
+    # Combine all reviewed papers
+    papers_data = selected_papers + read_papers + in_review_papers + left_swiped_papers
+
+    # Remove duplicates and create a dictionary
+    unique_papers_dict = {paper['paper_id']: paper for paper in papers_data}
+
+    # Build a list of papers with their status
+    all_papers = []
+    for paper_id, paper in unique_papers_dict.items():
+        if any(paper_id == p['paper_id'] for p in selected_papers):
+            status = 'unread'
+        elif any(paper_id == p['paper_id'] for p in in_review_papers):
+            status = 'in_review'
+        elif any(paper_id == p['paper_id'] for p in read_papers):
+            status = 'read'
+        elif any(paper_id == p['paper_id'] for p in left_swiped_papers):
+            status = 'left_swiped'
+        else:
+            status = 'unknown'  # Shouldn't happen
+        paper_with_status = paper.copy()
+        paper_with_status['status'] = status
+        all_papers.append(paper_with_status)
+
+    if request.method == 'POST':
+        selected_ids = request.form.getlist('selected_papers')
+        for paper_id in selected_ids:
+            # Move papers to selected_papers (Unread)
+            paper = unique_papers_dict.get(paper_id)
+            if paper and paper_id not in [p['paper_id'] for p in selected_papers]:
+                selected_papers.append(paper)
+        # Remove papers from other categories
+        read_papers = [p for p in read_papers if p['paper_id'] not in selected_ids]
+        in_review_papers = [p for p in in_review_papers if p['paper_id'] not in selected_ids]
+        left_swiped_papers = [p for p in left_swiped_papers if p['paper_id'] not in selected_ids]
+
+        # Save changes
+        with open(SELECTED_PAPERS_FILE, 'w') as file:
+            json.dump(selected_papers, file)
+        with open(READ_PAPERS_FILE, 'w') as file:
+            json.dump(read_papers, file)
+        with open(IN_REVIEW_PAPERS_FILE, 'w') as file:
+            json.dump(in_review_papers, file)
+        with open(LEFT_SWIPED_PAPERS_FILE, 'w') as file:
+            json.dump(left_swiped_papers, file)
+
+        return redirect(url_for('all_papers'))
+
+    return render_template('all_papers.html', papers=all_papers)
 
 @app.route('/unread_papers', methods=['GET', 'POST'])
 def unread_papers():

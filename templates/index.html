@@ -27,7 +27,9 @@
         .then(data => {
             if (data.status === 'ok') {
                 document.getElementById('title').innerText = data.title;
-                document.getElementById('summary').innerText = data.summary;
+                // Remove new lines from summary
+                let summary = data.summary.replace(/\n/g, ' ');
+                document.getElementById('summary').innerText = summary;
                 document.getElementById('link').href = data.link;
                 document.getElementById('link').innerText = 'View on arXiv';
                 document.getElementById('paper-container').dataset.paperId = data.paper_id;

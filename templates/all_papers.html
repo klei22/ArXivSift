@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}All Reviewed Papers{% endblock %}
+{% block content %}
+<h1>All Reviewed Papers</h1>
+<form id="papers-form" method="post">
+    <div class="actions mb-3">
+        <button type="submit" class="btn btn-primary mr-2 mb-2">Move to Unread</button>
+        <button type="button" onclick="toggleSelectAll(this)" class="btn btn-secondary mr-2 mb-2">Select All</button>
+    </div>
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th><input type="checkbox" id="select-all" onclick="toggleSelectAll(this)"></th>
+                <th>Status</th>
+                <th>Title</th>
+                <th>Link</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for paper in papers %}
+            <tr>
+                <td><input type="checkbox" name="selected_papers" value="{{ paper.paper_id }}"></td>
+                <td>
+                    {% if paper.status == 'left_swiped' %}
+                        <i class="fas fa-times text-danger"></i>
+                    {% elif paper.status == 'unread' %}
+                        <i class="fas fa-book-open text-primary"></i>
+                    {% elif paper.status == 'in_review' %}
+                        <i class="fas fa-hourglass-half text-warning"></i>
+                    {% elif paper.status == 'read' %}
+                        <i class="fas fa-check text-success"></i>
+                    {% else %}
+                        <i class="fas fa-question-circle text-muted"></i>
+                    {% endif %}
+                </td>
+                <td>{{ paper.title }}</td>
+                <td><a href="{{ paper.link }}" target="_blank">View Abstract</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+    function toggleSelectAll(checkbox) {
+        var checkboxes = document.querySelectorAll('input[name="selected_papers"]');
+        checkboxes.forEach(function(cb) {
+            cb.checked = checkbox.checked;
+        });
+    }
+</script>
+{% endblock %}
+

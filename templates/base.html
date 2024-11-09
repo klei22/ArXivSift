@@ -5,6 +5,8 @@
     <title>SwipeXiv - {% block title %}{% endblock %}</title>
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Roboto|Open+Sans|Lato|Montserrat&display=swap" rel="stylesheet">
     <!-- Custom CSS -->
@@ -68,6 +70,12 @@
             background-color: #ffc107;
             border-color: #ffc107;
         }
+        @media (max-width: 576px) {
+        .card-text {
+            white-space: pre-wrap;
+            overflow-wrap: break-word;
+            }
+        }
     </style>
 </head>
 <body>
@@ -91,6 +99,9 @@
                 <li class="nav-item{% if request.path == '/read_papers' %} active{% endif %}">
                     <a class="nav-link" href="/read_papers">Read Papers</a>
                 </li>
+                <li class="nav-item{% if request.path == '/all_papers' %} active{% endif %}">
+                    <a class="nav-link" href="/all_papers">All Papers</a>
+                </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="navbarSettings" role="button" data-toggle="dropdown">
                         Settings
@@ -103,6 +114,8 @@
             </ul>
         </div>
     </nav>
+    </br>
+    </br>
 
     <!-- Font Selection Modal -->
     <div class="modal fade" id="fontModal" tabindex="-1" role="dialog" aria-labelledby="fontModalLabel" aria-hidden="true">
