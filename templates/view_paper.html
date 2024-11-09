@@ -46,6 +46,7 @@
             font-size: 16px;
             border: 1px solid #ccc;
             resize: none;
+            outline: none;
         }
 
         /* Show notes panel */
@@ -96,6 +97,10 @@
         // Toggle notes panel visibility
         function toggleNotes() {
             notesPanel.classList.toggle('show');
+            // Focus on the textarea when the panel is shown
+            if (notesPanel.classList.contains('show')) {
+                notesTextarea.focus();
+            }
         }
 
         toggleNotesBtn.addEventListener('click', toggleNotes);
@@ -109,7 +114,7 @@
 
         function saveNotes() {
             const notes = notesTextarea.value;
-            fetch('', {
+            fetch(window.location.href, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                 body: new URLSearchParams({'notes': notes})
