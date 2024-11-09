@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for
 import requests
 import xml.etree.ElementTree as ET
 import json
@@ -75,6 +75,8 @@ def get_paper():
 
 @app.route('/review_paper', methods=['POST'])
 def review_paper():
+    global selected_papers, read_papers  # Declare global variables
+
     data = request.json
     paper_id = data['paper_id']
     action = data['action']
@@ -94,16 +96,78 @@ def review_paper():
         'link': link
     }
 
-    if action == 'like' and paper_id not in [paper['paper_id'] for paper in selected_papers]:
-        selected_papers.append(paper_data)
+    if action == 'like':
+        if paper_id not in [paper['paper_id'] for paper in selected_papers]:
+            selected_papers.append(paper_data)
+            with open(SELECTED_PAPERS_FILE, 'w') as file:
+                json.dump(selected_papers, file)
+
+    elif action == 'read':
+        if paper_id not in [paper['paper_id'] for paper in read_papers]:
+            read_papers.append(paper_data)
+            with open(READ_PAPERS_FILE, 'w') as file:
+                json.dump(read_papers, file)
+
+        # Remove from selected_papers if present
+        selected_papers = [paper for paper in selected_papers if paper['paper_id'] != paper_id]
         with open(SELECTED_PAPERS_FILE, 'w') as file:
             json.dump(selected_papers, file)
-    elif action == 'read' and paper_id not in [paper['paper_id'] for paper in read_papers]:
-        read_papers.append(paper_data)
-        with open(READ_PAPERS_FILE, 'w') as file:
-            json.dump(read_papers, file)
 
     return jsonify({'status': 'ok'})
+
+@app.route('/unread_papers', methods=['GET', 'POST'])
+def unread_papers():
+    global selected_papers, read_papers
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+        selected_ids = request.form.getlist('selected_papers')
+        if action == 'move_to_read':
+            for paper_id in selected_ids:
+                # Move from selected_papers to read_papers
+                paper = next((p for p in selected_papers if p['paper_id'] == paper_id), None)
+                if paper:
+                    selected_papers = [p for p in selected_papers if p['paper_id'] != paper_id]
+                    read_papers.append(paper)
+            # Save changes
+            with open(SELECTED_PAPERS_FILE, 'w') as file:
+                json.dump(selected_papers, file)
+            with open(READ_PAPERS_FILE, 'w') as file:
+                json.dump(read_papers, file)
+        elif action == 'get_links':
+            # Return the abstract links of selected papers
+            links = ' '.join([paper['link'] for paper in selected_papers if paper['paper_id'] in selected_ids])
+            return jsonify({'links': links})
+        return redirect(url_for('unread_papers'))
+
+    return render_template('unread_papers.html', papers=selected_papers)
+
+@app.route('/read_papers', methods=['GET', 'POST'])
+def read_papers_route():
+    global selected_papers, read_papers
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+        selected_ids = request.form.getlist('selected_papers')
+        if action == 'move_to_unread':
+            for paper_id in selected_ids:
+                # Move from read_papers to selected_papers
+                paper = next((p for p in read_papers if p['paper_id'] == paper_id), None)
+                if paper:
+                    read_papers = [p for p in read_papers if p['paper_id'] != paper_id]
+                    selected_papers.append(paper)
+            # Save changes
+            with open(READ_PAPERS_FILE, 'w') as file:
+                json.dump(read_papers, file)
+            with open(SELECTED_PAPERS_FILE, 'w') as file:
+                json.dump(selected_papers, file)
+        elif action == 'get_links':
+            # Return the abstract links of selected papers
+            links = ' '.join([paper['link'] for paper in read_papers if paper['paper_id'] in selected_ids])
+            return jsonify({'links': links})
+        return redirect(url_for('read_papers_route'))
+
+    return render_template('read_papers.html', papers=read_papers)
 
 @app.route('/get_selected_papers')
 def get_selected_papers():

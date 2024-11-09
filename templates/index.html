@@ -7,12 +7,17 @@
         #paper-container { max-width: 800px; margin: auto; padding: 20px; border: 1px solid #ccc; }
         #controls { margin-top: 20px; }
         #controls button { padding: 10px 20px; margin: 5px; }
-        #selected-papers, #read-papers { margin-top: 40px; }
-        #paper-links { width: 100%; height: 100px; }
+        .nav { margin-bottom: 20px; }
+        .nav a { margin-right: 10px; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
 </head>
 <body>
+    <div class="nav">
+        <a href="/">Home</a>
+        <a href="/unread_papers">Unread Papers</a>
+        <a href="/read_papers">Read Papers</a>
+    </div>
     <div id="paper-container">
         <h2 id="title">Loading...</h2>
         <p id="summary"></p>
@@ -22,14 +27,6 @@
         <button onclick="swipe('like')">Swipe Right (Interested)</button>
         <button onclick="swipe('dislike')">Swipe Left (Not Interested)</button>
         <button onclick="swipe('read')">Read Now</button>
-    </div>
-    <div id="selected-papers">
-        <button onclick="getSelectedPapers()">Copy Selected Papers</button>
-        <textarea id="paper-links" readonly></textarea>
-    </div>
-    <div id="read-papers">
-        <button onclick="showReadPapers()">View Read Papers</button>
-        <div id="read-papers-list"></div>
     </div>
     <script>
         let start = 0;
@@ -80,36 +77,6 @@
                     }
                     loadPaper();
                 }
-            });
-        }
-
-        function getSelectedPapers() {
-            fetch('/get_selected_papers')
-            .then(response => response.json())
-            .then(data => {
-                let textarea = document.getElementById('paper-links');
-                textarea.value = data.links;
-                textarea.select();
-                document.execCommand('copy');
-                alert('Selected papers copied to clipboard!');
-            });
-        }
-
-        function showReadPapers() {
-            fetch('/get_read_papers')
-            .then(response => response.json())
-            .then(data => {
-                let readPapersList = document.getElementById('read-papers-list');
-                readPapersList.innerHTML = '';
-                data.papers.forEach(paper => {
-                    let paperDiv = document.createElement('div');
-                    let paperLink = document.createElement('a');
-                    paperLink.href = paper.link;
-                    paperLink.target = '_blank';
-                    paperLink.innerText = paper.title;
-                    paperDiv.appendChild(paperLink);
-                    readPapersList.appendChild(paperDiv);
-                });
             });
         }
 

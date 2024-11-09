@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SwipeXiv - Read Papers</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 50px; }
+        .nav { margin-bottom: 20px; }
+        .nav a { margin-right: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .actions { margin-bottom: 20px; }
+    </style>
+    <script>
+        function getSelectedLinks() {
+            var form = document.getElementById('papers-form');
+            var formData = new FormData(form);
+            formData.append('action', 'get_links');
+            fetch('/read_papers', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                var textarea = document.getElementById('paper-links');
+                textarea.value = data.links;
+                textarea.select();
+                document.execCommand('copy');
+                alert('Selected paper links copied to clipboard!');
+            });
+        }
+    </script>
+</head>
+<body>
+    <div class="nav">
+        <a href="/">Home</a>
+        <a href="/unread_papers">Unread Papers</a>
+        <a href="/read_papers">Read Papers</a>
+    </div>
+    <h1>Read Papers</h1>
+    <form id="papers-form" method="post">
+        <div class="actions">
+            <button type="submit" name="action" value="move_to_unread">Move to Unread</button>
+            <button type="button" onclick="getSelectedLinks()">Copy Abstract Links</button>
+        </div>
+        <table>
+            <tr>
+                <th>Select</th>
+                <th>Title</th>
+                <th>Link</th>
+            </tr>
+            {% for paper in papers %}
+            <tr>
+                <td><input type="checkbox" name="selected_papers" value="{{ paper.paper_id }}"></td>
+                <td>{{ paper.title }}</td>
+                <td><a href="{{ paper.link }}" target="_blank">View Abstract</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+        <textarea id="paper-links" readonly style="width:100%; height:100px;"></textarea>
+    </form>
+</body>
+</html>
+
