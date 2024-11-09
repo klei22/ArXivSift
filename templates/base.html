@@ -5,37 +5,77 @@
     <title>SwipeXiv - {% block title %}{% endblock %}</title>
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto|Open+Sans|Lato|Montserrat&display=swap" rel="stylesheet">
     <!-- Custom CSS -->
     <style>
-        body {
-            padding-top: 56px;
-        }
         :root {
-            --bg-color: #fff;
-            --text-color: #000;
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --nav-bg-color: #f8f9fa;
+            --nav-text-color: #000000;
+            --button-primary-bg: #007bff;
+            --button-primary-border: #007bff;
+            --button-secondary-bg: #6c757d;
+            --button-secondary-border: #6c757d;
+            --font-family: 'Roboto', sans-serif;
         }
         body.dark-mode {
             --bg-color: #121212;
             --text-color: #e0e0e0;
+            --nav-bg-color: #1f1f1f;
+            --nav-text-color: #e0e0e0;
+            --button-primary-bg: #0d6efd;
+            --button-primary-border: #0d6efd;
+            --button-secondary-bg: #adb5bd;
+            --button-secondary-border: #adb5bd;
         }
         body {
             background-color: var(--bg-color);
             color: var(--text-color);
+            font-family: var(--font-family);
         }
-        .navbar, .card, .table {
+        .navbar {
+            background-color: var(--nav-bg-color) !important;
+        }
+        .navbar-nav .nav-link, .navbar-brand, .navbar-toggler {
+            color: var(--nav-text-color) !important;
+        }
+        .navbar-toggler-icon {
+            filter: brightness(0) invert(1);
+        }
+        .card, .table {
             background-color: var(--bg-color);
+            color: var(--text-color);
         }
-        .navbar-nav .nav-link, .navbar-brand {
-            color: var(--text-color) !important;
+        .btn-primary {
+            background-color: var(--button-primary-bg);
+            border-color: var(--button-primary-border);
+        }
+        .btn-secondary {
+            background-color: var(--button-secondary-bg);
+            border-color: var(--button-secondary-border);
+        }
+        .btn-success {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+        .btn-warning {
+            background-color: #ffc107;
+            border-color: #ffc107;
         }
     </style>
 </head>
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg fixed-top navbar-light bg-light">
+    <nav class="navbar navbar-expand-lg fixed-top">
         <a class="navbar-brand" href="/">SwipeXiv</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
+            <span class="navbar-toggler-icon" style="color: var(--nav-text-color);"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNavDropdown">
             <ul class="navbar-nav ml-auto">
@@ -55,13 +95,40 @@
                     <a class="nav-link dropdown-toggle" href="#" id="navbarSettings" role="button" data-toggle="dropdown">
                         Settings
                     </a>
-                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarSettings">
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarSettings" style="background-color: var(--bg-color);">
                         <a class="dropdown-item" href="#" onclick="toggleDarkMode()">Toggle Dark Mode</a>
+                        <a class="dropdown-item" href="#" data-toggle="modal" data-target="#fontModal">Change Font</a>
                     </div>
                 </li>
             </ul>
         </div>
     </nav>
+
+    <!-- Font Selection Modal -->
+    <div class="modal fade" id="fontModal" tabindex="-1" role="dialog" aria-labelledby="fontModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content" style="background-color: var(--bg-color); color: var(--text-color);">
+          <div class="modal-header">
+            <h5 class="modal-title" id="fontModalLabel">Select Font</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: var(--text-color);">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <select id="fontSelect" class="form-control">
+                <option value="'Roboto', sans-serif">Roboto</option>
+                <option value="'Open Sans', sans-serif">Open Sans</option>
+                <option value="'Lato', sans-serif">Lato</option>
+                <option value="'Montserrat', sans-serif">Montserrat</option>
+            </select>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" onclick="changeFont()">Apply</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Content -->
     <div class="container mt-4">
@@ -70,7 +137,9 @@
 
     <!-- Bootstrap JS and dependencies -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <!-- Popper.js is required for Bootstrap tooltips and popovers -->
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <!-- Bootstrap JS -->
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <!-- Custom JS -->
     <script>
@@ -79,10 +148,22 @@
             localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
         }
 
-        // Load dark mode preference
+        function changeFont() {
+            var font = document.getElementById('fontSelect').value;
+            document.documentElement.style.setProperty('--font-family', font);
+            localStorage.setItem('fontFamily', font);
+            $('#fontModal').modal('hide');
+        }
+
+        // Load preferences
         window.onload = function() {
             if (localStorage.getItem('darkMode') === 'true') {
                 document.body.classList.add('dark-mode');
+            }
+            var savedFont = localStorage.getItem('fontFamily');
+            if (savedFont) {
+                document.documentElement.style.setProperty('--font-family', savedFont);
+                document.getElementById('fontSelect').value = savedFont;
             }
         };
     </script>

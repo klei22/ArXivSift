@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Home{% endblock %}
 {% block content %}
-<div class="card">
+<div class="card" id="paper-container">
     <div class="card-body">
         <h2 id="title">Loading...</h2>
         <p id="summary"></p>
@@ -9,10 +9,10 @@
     </div>
 </div>
 <div id="controls" class="mt-3">
-    <button class="btn btn-success" onclick="swipe('like')">Swipe Right (Interested)</button>
-    <button class="btn btn-danger" onclick="swipe('dislike')">Swipe Left (Not Interested)</button>
-    <button class="btn btn-primary" onclick="swipe('read')">Read Now</button>
-    <button class="btn btn-warning" onclick="swipe('in_review')">Move to In Review</button>
+    <button class="btn btn-success mr-2 mb-2" onclick="swipe('like')">Swipe Right (Interested)</button>
+    <button class="btn btn-danger mr-2 mb-2" onclick="swipe('dislike')">Swipe Left (Not Interested)</button>
+    <button class="btn btn-primary mr-2 mb-2" onclick="swipe('read')">Read Now</button>
+    <button class="btn btn-warning mr-2 mb-2" onclick="swipe('in_review')">Move to In Review</button>
 </div>
 {% endblock %}
 {% block scripts %}
@@ -71,7 +71,7 @@
     }
 
     function initializeSwipe() {
-        let paperContainer = document.querySelector('.card');
+        let paperContainer = document.getElementById('paper-container');
         let hammertime = new Hammer(paperContainer);
 
         hammertime.on('swipeleft', function(ev) {
