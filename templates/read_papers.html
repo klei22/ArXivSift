@@ -29,23 +29,31 @@
                 alert('Selected paper links copied to clipboard!');
             });
         }
+
+        function toggleSelectAll(checkbox) {
+            var checkboxes = document.querySelectorAll('input[name="selected_papers"]');
+            checkboxes.forEach(function(cb) {
+                cb.checked = checkbox.checked;
+            });
+        }
     </script>
 </head>
 <body>
     <div class="nav">
         <a href="/">Home</a>
         <a href="/unread_papers">Unread Papers</a>
+        <a href="/in_review_papers">In Review Papers</a>
         <a href="/read_papers">Read Papers</a>
     </div>
     <h1>Read Papers</h1>
     <form id="papers-form" method="post">
         <div class="actions">
-            <button type="submit" name="action" value="move_to_unread">Move to Unread</button>
+            <button type="submit" name="action" value="move_to_in_review">Move to In Review</button>
             <button type="button" onclick="getSelectedLinks()">Copy Abstract Links</button>
         </div>
         <table>
             <tr>
-                <th>Select</th>
+                <th><input type="checkbox" onclick="toggleSelectAll(this)"></th>
                 <th>Title</th>
                 <th>Link</th>
             </tr>

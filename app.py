@@ -8,7 +8,8 @@ app = Flask(__name__)
 
 # File paths for storing data
 REVIEWED_PAPERS_FILE = 'reviewed_papers.json'
-SELECTED_PAPERS_FILE = 'selected_papers.json'
+SELECTED_PAPERS_FILE = 'selected_papers.json'  # Unread papers
+IN_REVIEW_PAPERS_FILE = 'in_review_papers.json'
 READ_PAPERS_FILE = 'read_papers.json'
 
 # Load reviewed papers (list of paper IDs)
@@ -24,6 +25,13 @@ if os.path.exists(SELECTED_PAPERS_FILE):
         selected_papers = json.load(file)
 else:
     selected_papers = []
+
+# Load in-review papers
+if os.path.exists(IN_REVIEW_PAPERS_FILE):
+    with open(IN_REVIEW_PAPERS_FILE, 'r') as file:
+        in_review_papers = json.load(file)
+else:
+    in_review_papers = []
 
 # Load read papers (list of paper dictionaries)
 if os.path.exists(READ_PAPERS_FILE):
@@ -75,7 +83,7 @@ def get_paper():
 
 @app.route('/review_paper', methods=['POST'])
 def review_paper():
-    global selected_papers, read_papers  # Declare global variables
+    global selected_papers, read_papers, in_review_papers  # Add global variables
 
     data = request.json
     paper_id = data['paper_id']
@@ -101,13 +109,23 @@ def review_paper():
             selected_papers.append(paper_data)
             with open(SELECTED_PAPERS_FILE, 'w') as file:
                 json.dump(selected_papers, file)
-
     elif action == 'read':
         if paper_id not in [paper['paper_id'] for paper in read_papers]:
             read_papers.append(paper_data)
             with open(READ_PAPERS_FILE, 'w') as file:
                 json.dump(read_papers, file)
-
+        # Remove from selected_papers and in_review_papers if present
+        selected_papers = [paper for paper in selected_papers if paper['paper_id'] != paper_id]
+        in_review_papers = [paper for paper in in_review_papers if paper['paper_id'] != paper_id]
+        with open(SELECTED_PAPERS_FILE, 'w') as file:
+            json.dump(selected_papers, file)
+        with open(IN_REVIEW_PAPERS_FILE, 'w') as file:
+            json.dump(in_review_papers, file)
+    elif action == 'in_review':
+        if paper_id not in [paper['paper_id'] for paper in in_review_papers]:
+            in_review_papers.append(paper_data)
+            with open(IN_REVIEW_PAPERS_FILE, 'w') as file:
+                json.dump(in_review_papers, file)
         # Remove from selected_papers if present
         selected_papers = [paper for paper in selected_papers if paper['paper_id'] != paper_id]
         with open(SELECTED_PAPERS_FILE, 'w') as file:
@@ -117,7 +135,7 @@ def review_paper():
 
 @app.route('/unread_papers', methods=['GET', 'POST'])
 def unread_papers():
-    global selected_papers, read_papers
+    global selected_papers, read_papers, in_review_papers  # Add global variables
 
     if request.method == 'POST':
         action = request.form.get('action')
@@ -134,6 +152,18 @@ def unread_papers():
                 json.dump(selected_papers, file)
             with open(READ_PAPERS_FILE, 'w') as file:
                 json.dump(read_papers, file)
+        elif action == 'move_to_in_review':
+            for paper_id in selected_ids:
+                # Move from selected_papers to in_review_papers
+                paper = next((p for p in selected_papers if p['paper_id'] == paper_id), None)
+                if paper:
+                    selected_papers = [p for p in selected_papers if p['paper_id'] != paper_id]
+                    in_review_papers.append(paper)
+            # Save changes
+            with open(SELECTED_PAPERS_FILE, 'w') as file:
+                json.dump(selected_papers, file)
+            with open(IN_REVIEW_PAPERS_FILE, 'w') as file:
+                json.dump(in_review_papers, file)
         elif action == 'get_links':
             # Return the abstract links of selected papers
             links = ' '.join([paper['link'] for paper in selected_papers if paper['paper_id'] in selected_ids])
@@ -142,25 +172,64 @@ def unread_papers():
 
     return render_template('unread_papers.html', papers=selected_papers)
 
-@app.route('/read_papers', methods=['GET', 'POST'])
-def read_papers_route():
-    global selected_papers, read_papers
+@app.route('/in_review_papers', methods=['GET', 'POST'])
+def in_review_papers_route():
+    global selected_papers, read_papers, in_review_papers  # Add global variables
 
     if request.method == 'POST':
         action = request.form.get('action')
         selected_ids = request.form.getlist('selected_papers')
-        if action == 'move_to_unread':
+        if action == 'move_to_read':
             for paper_id in selected_ids:
-                # Move from read_papers to selected_papers
+                # Move from in_review_papers to read_papers
+                paper = next((p for p in in_review_papers if p['paper_id'] == paper_id), None)
+                if paper:
+                    in_review_papers = [p for p in in_review_papers if p['paper_id'] != paper_id]
+                    read_papers.append(paper)
+            # Save changes
+            with open(IN_REVIEW_PAPERS_FILE, 'w') as file:
+                json.dump(in_review_papers, file)
+            with open(READ_PAPERS_FILE, 'w') as file:
+                json.dump(read_papers, file)
+        elif action == 'move_to_unread':
+            for paper_id in selected_ids:
+                # Move from in_review_papers to selected_papers
+                paper = next((p for p in in_review_papers if p['paper_id'] == paper_id), None)
+                if paper:
+                    in_review_papers = [p for p in in_review_papers if p['paper_id'] != paper_id]
+                    selected_papers.append(paper)
+            # Save changes
+            with open(IN_REVIEW_PAPERS_FILE, 'w') as file:
+                json.dump(in_review_papers, file)
+            with open(SELECTED_PAPERS_FILE, 'w') as file:
+                json.dump(selected_papers, file)
+        elif action == 'get_links':
+            # Return the abstract links of selected papers
+            links = ' '.join([paper['link'] for paper in in_review_papers if paper['paper_id'] in selected_ids])
+            return jsonify({'links': links})
+        return redirect(url_for('in_review_papers_route'))
+
+    return render_template('in_review_papers.html', papers=in_review_papers)
+
+@app.route('/read_papers', methods=['GET', 'POST'])
+def read_papers_route():
+    global selected_papers, read_papers, in_review_papers  # Add global variables
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+        selected_ids = request.form.getlist('selected_papers')
+        if action == 'move_to_in_review':
+            for paper_id in selected_ids:
+                # Move from read_papers to in_review_papers
                 paper = next((p for p in read_papers if p['paper_id'] == paper_id), None)
                 if paper:
                     read_papers = [p for p in read_papers if p['paper_id'] != paper_id]
-                    selected_papers.append(paper)
+                    in_review_papers.append(paper)
             # Save changes
             with open(READ_PAPERS_FILE, 'w') as file:
                 json.dump(read_papers, file)
-            with open(SELECTED_PAPERS_FILE, 'w') as file:
-                json.dump(selected_papers, file)
+            with open(IN_REVIEW_PAPERS_FILE, 'w') as file:
+                json.dump(in_review_papers, file)
         elif action == 'get_links':
             # Return the abstract links of selected papers
             links = ' '.join([paper['link'] for paper in read_papers if paper['paper_id'] in selected_ids])

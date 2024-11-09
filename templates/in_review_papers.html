@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>SwipeXiv - Unread Papers</title>
+    <title>SwipeXiv - In Review Papers</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 50px; }
         .nav { margin-bottom: 20px; }
@@ -16,7 +16,7 @@
             var form = document.getElementById('papers-form');
             var formData = new FormData(form);
             formData.append('action', 'get_links');
-            fetch('/unread_papers', {
+            fetch('/in_review_papers', {
                 method: 'POST',
                 body: formData
             })
@@ -45,11 +45,11 @@
         <a href="/in_review_papers">In Review Papers</a>
         <a href="/read_papers">Read Papers</a>
     </div>
-    <h1>Unread Papers</h1>
+    <h1>In Review Papers</h1>
     <form id="papers-form" method="post">
         <div class="actions">
             <button type="submit" name="action" value="move_to_read">Move to Read</button>
-            <button type="submit" name="action" value="move_to_in_review">Move to In Review</button>
+            <button type="submit" name="action" value="move_to_unread">Move to Unread</button>
             <button type="button" onclick="getSelectedLinks()">Copy Abstract Links</button>
         </div>
         <table>

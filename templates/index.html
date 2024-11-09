@@ -16,6 +16,7 @@
     <div class="nav">
         <a href="/">Home</a>
         <a href="/unread_papers">Unread Papers</a>
+        <a href="/in_review_papers">In Review Papers</a>
         <a href="/read_papers">Read Papers</a>
     </div>
     <div id="paper-container">
@@ -27,6 +28,7 @@
         <button onclick="swipe('like')">Swipe Right (Interested)</button>
         <button onclick="swipe('dislike')">Swipe Left (Not Interested)</button>
         <button onclick="swipe('read')">Read Now</button>
+        <button onclick="swipe('in_review')">Move to In Review</button>
     </div>
     <script>
         let start = 0;
@@ -94,6 +96,10 @@
 
             hammertime.on('swipeup', function(ev) {
                 swipe('read');
+            });
+
+            hammertime.on('swipedown', function(ev) {
+                swipe('in_review');
             });
         }
 
