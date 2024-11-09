@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Read Papers{% endblock %}
 {% block content %}
-<h1>Read Papers</h1>
+<h1 class="mt-4">Read Papers</h1>
 <form id="papers-form" method="post">
     <div class="actions mb-3">
         <button type="submit" name="action" value="move_to_in_review" class="btn btn-warning mr-2 mb-2">Move to In Review</button>
@@ -12,7 +12,7 @@
             <tr>
                 <th><input type="checkbox" onclick="toggleSelectAll(this)"></th>
                 <th>Title</th>
-                <th>Link</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -20,7 +20,10 @@
             <tr>
                 <td><input type="checkbox" name="selected_papers" value="{{ paper.paper_id }}"></td>
                 <td>{{ paper.title }}</td>
-                <td><a href="{{ paper.link }}" target="_blank">View Abstract</a></td>
+                <td>
+                    <a href="{{ paper.link }}" target="_blank">View Abstract</a> |
+                    <a href="{{ url_for('view_paper', paper_id=paper.paper_id[7:]) }}">View & Take Notes</a>
+                </td>
             </tr>
             {% endfor %}
         </tbody>

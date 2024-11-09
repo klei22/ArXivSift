@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ paper.title }}{% endblock %}
+{% block content %}
+<h1 class="mt-4">{{ paper.title }}</h1>
+<div class="row">
+    <div class="col-md-7">
+        <iframe src="{{ url_for('serve_pdf', filename=pdf_filename) }}" width="100%" height="600px"></iframe>
+    </div>
+    <div class="col-md-5">
+        <h3>Notes</h3>
+        <textarea id="notes" class="form-control" rows="25">{{ notes }}</textarea>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+    const notesTextarea = document.getElementById('notes');
+    let timeoutId;
+    notesTextarea.addEventListener('input', function() {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(saveNotes, 1000); // Save after 1 second of inactivity
+    });
+
+    function saveNotes() {
+        const notes = notesTextarea.value;
+        fetch('', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: new URLSearchParams({'notes': notes})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'saved') {
+                console.log('Notes saved.');
+            }
+        });
+    }
+</script>
+{% endblock %}
+

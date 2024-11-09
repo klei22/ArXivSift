@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}All Reviewed Papers{% endblock %}
 {% block content %}
-<h1>All Reviewed Papers</h1>
+<h1 class="mt-4">All Reviewed Papers</h1>
 <form id="papers-form" method="post">
     <div class="actions mb-3">
         <button type="submit" class="btn btn-primary mr-2 mb-2">Move to Unread</button>
@@ -13,7 +13,7 @@
                 <th><input type="checkbox" id="select-all" onclick="toggleSelectAll(this)"></th>
                 <th>Status</th>
                 <th>Title</th>
-                <th>Link</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -22,15 +22,15 @@
                 <td><input type="checkbox" name="selected_papers" value="{{ paper.paper_id }}"></td>
                 <td>
                     {% if paper.status == 'left_swiped' %}
-                        <i class="fas fa-times text-danger"></i>
+                        <i class="fas fa-times text-danger" data-toggle="tooltip" title="Disliked"></i>
                     {% elif paper.status == 'unread' %}
-                        <i class="fas fa-book-open text-primary"></i>
+                        <i class="fas fa-book-open text-primary" data-toggle="tooltip" title="Unread"></i>
                     {% elif paper.status == 'in_review' %}
-                        <i class="fas fa-hourglass-half text-warning"></i>
+                        <i class="fas fa-hourglass-half text-warning" data-toggle="tooltip" title="In Review"></i>
                     {% elif paper.status == 'read' %}
-                        <i class="fas fa-check text-success"></i>
+                        <i class="fas fa-check text-success" data-toggle="tooltip" title="Read"></i>
                     {% else %}
-                        <i class="fas fa-question-circle text-muted"></i>
+                        <i class="fas fa-question-circle text-muted" data-toggle="tooltip" title="Unknown Status"></i>
                     {% endif %}
                 </td>
                 <td>{{ paper.title }}</td>
@@ -49,6 +49,11 @@
             cb.checked = checkbox.checked;
         });
     }
+
+    // Initialize tooltips
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip()
+    });
 </script>
 {% endblock %}
 

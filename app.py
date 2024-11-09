@@ -1,8 +1,8 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+import os
+from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file
 import requests
 import xml.etree.ElementTree as ET
 import json
-import os
 
 app = Flask(__name__)
 
@@ -12,41 +12,30 @@ SELECTED_PAPERS_FILE = 'selected_papers.json'  # Unread papers
 IN_REVIEW_PAPERS_FILE = 'in_review_papers.json'
 READ_PAPERS_FILE = 'read_papers.json'
 LEFT_SWIPED_PAPERS_FILE = 'left_swiped_papers.json'
+NOTES_DIR = 'notes'  # Directory to store notes
+PDF_DIR = 'pdfs'     # Directory to cache PDFs
 
-# Load reviewed papers (list of paper IDs)
-if os.path.exists(REVIEWED_PAPERS_FILE):
-    with open(REVIEWED_PAPERS_FILE, 'r') as file:
-        reviewed_papers = json.load(file)
-else:
-    reviewed_papers = []
+# Ensure directories exist
+os.makedirs(NOTES_DIR, exist_ok=True)
+os.makedirs(PDF_DIR, exist_ok=True)
 
-# Load selected papers (list of paper dictionaries)
-if os.path.exists(SELECTED_PAPERS_FILE):
-    with open(SELECTED_PAPERS_FILE, 'r') as file:
-        selected_papers = json.load(file)
-else:
-    selected_papers = []
+# Load data
+def load_json(filename):
+    if os.path.exists(filename):
+        with open(filename, 'r') as file:
+            return json.load(file)
+    else:
+        return []
 
-# Load in-review papers
-if os.path.exists(IN_REVIEW_PAPERS_FILE):
-    with open(IN_REVIEW_PAPERS_FILE, 'r') as file:
-        in_review_papers = json.load(file)
-else:
-    in_review_papers = []
+reviewed_papers = load_json(REVIEWED_PAPERS_FILE)
+selected_papers = load_json(SELECTED_PAPERS_FILE)
+in_review_papers = load_json(IN_REVIEW_PAPERS_FILE)
+read_papers = load_json(READ_PAPERS_FILE)
+left_swiped_papers = load_json(LEFT_SWIPED_PAPERS_FILE)
 
-# Load read papers (list of paper dictionaries)
-if os.path.exists(READ_PAPERS_FILE):
-    with open(READ_PAPERS_FILE, 'r') as file:
-        read_papers = json.load(file)
-else:
-    read_papers = []
-
-# Load left-swiped papers
-if os.path.exists(LEFT_SWIPED_PAPERS_FILE):
-    with open(LEFT_SWIPED_PAPERS_FILE, 'r') as file:
-        left_swiped_papers = json.load(file)
-else:
-    left_swiped_papers = []
+# Function to sanitize paper IDs for filenames
+def sanitize_filename(filename):
+    return filename.replace('/', '_').replace(':', '_')
 
 @app.route('/')
 def index():
@@ -145,6 +134,51 @@ def review_paper():
             json.dump(selected_papers, file)
 
     return jsonify({'status': 'ok'})
+
+@app.route('/view_paper/<path:paper_id>', methods=['GET', 'POST'])
+def view_paper(paper_id):
+    paper_id_full = 'http://' + paper_id  # Reconstruct full URL
+    # Find the paper in any category
+    paper = next((p for p in selected_papers + read_papers + in_review_papers + left_swiped_papers if p['paper_id'] == paper_id_full), None)
+    if not paper:
+        return "Paper not found.", 404
+
+    # Sanitize filename
+    sanitized_id = sanitize_filename(paper_id)
+
+    # PDF file path
+    pdf_path = os.path.join(PDF_DIR, f'{sanitized_id}.pdf')
+
+    # Download PDF if not already cached
+    if not os.path.exists(pdf_path):
+        # Construct PDF URL from paper ID
+        pdf_url = paper_id_full.replace('abs', 'pdf') + '.pdf'
+        response = requests.get(pdf_url)
+        if response.status_code == 200:
+            with open(pdf_path, 'wb') as f:
+                f.write(response.content)
+        else:
+            return "Unable to download PDF.", 500
+
+    # Handle notes
+    notes_path = os.path.join(NOTES_DIR, f'{sanitized_id}.txt')
+    if request.method == 'POST':
+        notes = request.form.get('notes', '')
+        with open(notes_path, 'w', encoding='utf-8') as f:
+            f.write(notes)
+        return jsonify({'status': 'saved'})
+    else:
+        # Load existing notes if any
+        if os.path.exists(notes_path):
+            with open(notes_path, 'r', encoding='utf-8') as f:
+                notes = f.read()
+        else:
+            notes = ''
+        return render_template('view_paper.html', paper=paper, notes=notes, pdf_filename=f'{sanitized_id}.pdf')
+
+@app.route('/pdf/<filename>')
+def serve_pdf(filename):
+    return send_file(os.path.join(PDF_DIR, filename))
 
 @app.route('/all_papers', methods=['GET', 'POST'])
 def all_papers():

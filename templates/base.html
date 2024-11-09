@@ -70,12 +70,6 @@
             background-color: #ffc107;
             border-color: #ffc107;
         }
-        @media (max-width: 576px) {
-        .card-text {
-            white-space: pre-wrap;
-            overflow-wrap: break-word;
-            }
-        }
     </style>
 </head>
 <body>
@@ -114,8 +108,7 @@
             </ul>
         </div>
     </nav>
-    </br>
-    </br>
+    </br></br> <!-- Added line breaks to prevent content overlap -->
 
     <!-- Font Selection Modal -->
     <div class="modal fade" id="fontModal" tabindex="-1" role="dialog" aria-labelledby="fontModalLabel" aria-hidden="true">
@@ -178,6 +171,10 @@
                 document.documentElement.style.setProperty('--font-family', savedFont);
                 document.getElementById('fontSelect').value = savedFont;
             }
+            // Initialize tooltips
+            $(function () {
+                $('[data-toggle="tooltip"]').tooltip()
+            });
         };
     </script>
     {% block scripts %}{% endblock %}
