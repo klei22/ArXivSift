@@ -1,15 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>arXiv Paper Swiper</title>
+    <title>SwipeXiv - arXiv Paper Swiper</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 50px; }
-        #paper-container { max-width: 800px; margin: auto; }
+        #paper-container { max-width: 800px; margin: auto; padding: 20px; border: 1px solid #ccc; }
         #controls { margin-top: 20px; }
         #controls button { padding: 10px 20px; margin: 5px; }
-        #selected-papers { margin-top: 40px; }
+        #selected-papers, #read-papers { margin-top: 40px; }
         #paper-links { width: 100%; height: 100px; }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
 </head>
 <body>
     <div id="paper-container">
@@ -20,13 +21,19 @@
     <div id="controls">
         <button onclick="swipe('like')">Swipe Right (Interested)</button>
         <button onclick="swipe('dislike')">Swipe Left (Not Interested)</button>
+        <button onclick="swipe('read')">Read Now</button>
     </div>
     <div id="selected-papers">
         <button onclick="getSelectedPapers()">Copy Selected Papers</button>
         <textarea id="paper-links" readonly></textarea>
     </div>
+    <div id="read-papers">
+        <button onclick="showReadPapers()">View Read Papers</button>
+        <div id="read-papers-list"></div>
+    </div>
     <script>
         let start = 0;
+
         function loadPaper() {
             fetch(`/get_paper?start=${start}`)
             .then(response => response.json())
@@ -50,14 +57,27 @@
 
         function swipe(action) {
             let paper_id = document.getElementById('paper-container').dataset.paperId;
+            let title = document.getElementById('title').innerText;
+            let summary = document.getElementById('summary').innerText;
+            let link = document.getElementById('link').href;
+
             fetch('/review_paper', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({'paper_id': paper_id, 'action': action})
+                body: JSON.stringify({
+                    'paper_id': paper_id,
+                    'action': action,
+                    'title': title,
+                    'summary': summary,
+                    'link': link
+                })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'ok') {
+                    if (action === 'read') {
+                        window.open(link, '_blank');
+                    }
                     loadPaper();
                 }
             });
@@ -75,7 +95,45 @@
             });
         }
 
-        window.onload = loadPaper;
+        function showReadPapers() {
+            fetch('/get_read_papers')
+            .then(response => response.json())
+            .then(data => {
+                let readPapersList = document.getElementById('read-papers-list');
+                readPapersList.innerHTML = '';
+                data.papers.forEach(paper => {
+                    let paperDiv = document.createElement('div');
+                    let paperLink = document.createElement('a');
+                    paperLink.href = paper.link;
+                    paperLink.target = '_blank';
+                    paperLink.innerText = paper.title;
+                    paperDiv.appendChild(paperLink);
+                    readPapersList.appendChild(paperDiv);
+                });
+            });
+        }
+
+        function initializeSwipe() {
+            let paperContainer = document.getElementById('paper-container');
+            let hammertime = new Hammer(paperContainer);
+
+            hammertime.on('swipeleft', function(ev) {
+                swipe('dislike');
+            });
+
+            hammertime.on('swiperight', function(ev) {
+                swipe('like');
+            });
+
+            hammertime.on('swipeup', function(ev) {
+                swipe('read');
+            });
+        }
+
+        window.onload = function() {
+            loadPaper();
+            initializeSwipe();
+        };
     </script>
 </body>
 </html>

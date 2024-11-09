@@ -9,20 +9,28 @@ app = Flask(__name__)
 # File paths for storing data
 REVIEWED_PAPERS_FILE = 'reviewed_papers.json'
 SELECTED_PAPERS_FILE = 'selected_papers.json'
+READ_PAPERS_FILE = 'read_papers.json'
 
-# Load reviewed papers
+# Load reviewed papers (list of paper IDs)
 if os.path.exists(REVIEWED_PAPERS_FILE):
     with open(REVIEWED_PAPERS_FILE, 'r') as file:
         reviewed_papers = json.load(file)
 else:
     reviewed_papers = []
 
-# Load selected papers
+# Load selected papers (list of paper dictionaries)
 if os.path.exists(SELECTED_PAPERS_FILE):
     with open(SELECTED_PAPERS_FILE, 'r') as file:
         selected_papers = json.load(file)
 else:
     selected_papers = []
+
+# Load read papers (list of paper dictionaries)
+if os.path.exists(READ_PAPERS_FILE):
+    with open(READ_PAPERS_FILE, 'r') as file:
+        read_papers = json.load(file)
+else:
+    read_papers = []
 
 @app.route('/')
 def index():
@@ -54,7 +62,7 @@ def get_paper():
 
         title = paper.find('{http://www.w3.org/2005/Atom}title').text.strip()
         summary = paper.find('{http://www.w3.org/2005/Atom}summary').text.strip()
-        link = paper.find('{http://www.w3.org/2005/Atom}id').text
+        link = paper_id  # The ID is also the link to the paper
 
         return jsonify({
             'status': 'ok',
@@ -70,24 +78,41 @@ def review_paper():
     data = request.json
     paper_id = data['paper_id']
     action = data['action']
+    title = data.get('title')
+    summary = data.get('summary')
+    link = data.get('link')
 
     if paper_id not in reviewed_papers:
         reviewed_papers.append(paper_id)
         with open(REVIEWED_PAPERS_FILE, 'w') as file:
             json.dump(reviewed_papers, file)
 
-    if action == 'like' and paper_id not in selected_papers:
-        selected_papers.append(paper_id)
+    paper_data = {
+        'paper_id': paper_id,
+        'title': title,
+        'summary': summary,
+        'link': link
+    }
+
+    if action == 'like' and paper_id not in [paper['paper_id'] for paper in selected_papers]:
+        selected_papers.append(paper_data)
         with open(SELECTED_PAPERS_FILE, 'w') as file:
             json.dump(selected_papers, file)
+    elif action == 'read' and paper_id not in [paper['paper_id'] for paper in read_papers]:
+        read_papers.append(paper_data)
+        with open(READ_PAPERS_FILE, 'w') as file:
+            json.dump(read_papers, file)
 
     return jsonify({'status': 'ok'})
 
 @app.route('/get_selected_papers')
 def get_selected_papers():
-    # Return the list of selected paper links
-    links = ' '.join(selected_papers)
+    links = ' '.join([paper['link'] for paper in selected_papers])
     return jsonify({'links': links})
+
+@app.route('/get_read_papers')
+def get_read_papers():
+    return jsonify({'papers': read_papers})
 
 if __name__ == '__main__':
     app.run(debug=True)
