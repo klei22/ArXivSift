@@ -1,113 +1,100 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>SwipeXiv - arXiv Paper Swiper</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 50px; }
-        #paper-container { max-width: 800px; margin: auto; padding: 20px; border: 1px solid #ccc; }
-        #controls { margin-top: 20px; }
-        #controls button { padding: 10px 20px; margin: 5px; }
-        .nav { margin-bottom: 20px; }
-        .nav a { margin-right: 10px; }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
-</head>
-<body>
-    <div class="nav">
-        <a href="/">Home</a>
-        <a href="/unread_papers">Unread Papers</a>
-        <a href="/in_review_papers">In Review Papers</a>
-        <a href="/read_papers">Read Papers</a>
-    </div>
-    <div id="paper-container">
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-body">
         <h2 id="title">Loading...</h2>
         <p id="summary"></p>
         <p><a id="link" href="#" target="_blank">View on arXiv</a></p>
     </div>
-    <div id="controls">
-        <button onclick="swipe('like')">Swipe Right (Interested)</button>
-        <button onclick="swipe('dislike')">Swipe Left (Not Interested)</button>
-        <button onclick="swipe('read')">Read Now</button>
-        <button onclick="swipe('in_review')">Move to In Review</button>
-    </div>
-    <script>
-        let start = 0;
+</div>
+<div id="controls" class="mt-3">
+    <button class="btn btn-success" onclick="swipe('like')">Swipe Right (Interested)</button>
+    <button class="btn btn-danger" onclick="swipe('dislike')">Swipe Left (Not Interested)</button>
+    <button class="btn btn-primary" onclick="swipe('read')">Read Now</button>
+    <button class="btn btn-warning" onclick="swipe('in_review')">Move to In Review</button>
+</div>
+{% endblock %}
+{% block scripts %}
+<!-- Include Hammer.js for swipe gestures -->
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+<script>
+    let start = 0;
 
-        function loadPaper() {
-            fetch(`/get_paper?start=${start}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'ok') {
-                    document.getElementById('title').innerText = data.title;
-                    document.getElementById('summary').innerText = data.summary;
-                    document.getElementById('link').href = data.link;
-                    document.getElementById('link').innerText = 'View on arXiv';
-                    document.getElementById('paper-container').dataset.paperId = data.paper_id;
-                    start = data.next_start;
-                } else {
-                    document.getElementById('title').innerText = 'No more papers to review.';
-                    document.getElementById('summary').innerText = '';
-                    document.getElementById('link').href = '#';
-                    document.getElementById('link').innerText = '';
-                    document.getElementById('controls').style.display = 'none';
-                }
-            });
-        }
+    function loadPaper() {
+        fetch(`/get_paper?start=${start}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                document.getElementById('title').innerText = data.title;
+                document.getElementById('summary').innerText = data.summary;
+                document.getElementById('link').href = data.link;
+                document.getElementById('link').innerText = 'View on arXiv';
+                document.getElementById('paper-container').dataset.paperId = data.paper_id;
+                start = data.next_start;
+            } else {
+                document.getElementById('title').innerText = 'No more papers to review.';
+                document.getElementById('summary').innerText = '';
+                document.getElementById('link').href = '#';
+                document.getElementById('link').innerText = '';
+                document.getElementById('controls').style.display = 'none';
+            }
+        });
+    }
 
-        function swipe(action) {
-            let paper_id = document.getElementById('paper-container').dataset.paperId;
-            let title = document.getElementById('title').innerText;
-            let summary = document.getElementById('summary').innerText;
-            let link = document.getElementById('link').href;
+    function swipe(action) {
+        let paper_id = document.getElementById('paper-container').dataset.paperId;
+        let title = document.getElementById('title').innerText;
+        let summary = document.getElementById('summary').innerText;
+        let link = document.getElementById('link').href;
 
-            fetch('/review_paper', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    'paper_id': paper_id,
-                    'action': action,
-                    'title': title,
-                    'summary': summary,
-                    'link': link
-                })
+        fetch('/review_paper', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                'paper_id': paper_id,
+                'action': action,
+                'title': title,
+                'summary': summary,
+                'link': link
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'ok') {
-                    if (action === 'read') {
-                        window.open(link, '_blank');
-                    }
-                    loadPaper();
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                if (action === 'read') {
+                    window.open(link, '_blank');
                 }
-            });
-        }
+                loadPaper();
+            }
+        });
+    }
 
-        function initializeSwipe() {
-            let paperContainer = document.getElementById('paper-container');
-            let hammertime = new Hammer(paperContainer);
+    function initializeSwipe() {
+        let paperContainer = document.querySelector('.card');
+        let hammertime = new Hammer(paperContainer);
 
-            hammertime.on('swipeleft', function(ev) {
-                swipe('dislike');
-            });
+        hammertime.on('swipeleft', function(ev) {
+            swipe('dislike');
+        });
 
-            hammertime.on('swiperight', function(ev) {
-                swipe('like');
-            });
+        hammertime.on('swiperight', function(ev) {
+            swipe('like');
+        });
 
-            hammertime.on('swipeup', function(ev) {
-                swipe('read');
-            });
+        hammertime.on('swipeup', function(ev) {
+            swipe('read');
+        });
 
-            hammertime.on('swipedown', function(ev) {
-                swipe('in_review');
-            });
-        }
+        hammertime.on('swipedown', function(ev) {
+            swipe('in_review');
+        });
+    }
 
-        window.onload = function() {
-            loadPaper();
-            initializeSwipe();
-        };
-    </script>
-</body>
-</html>
+    window.onload = function() {
+        loadPaper();
+        initializeSwipe();
+    };
+</script>
+{% endblock %}
 

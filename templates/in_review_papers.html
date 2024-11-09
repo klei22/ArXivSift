@@ -1,63 +1,22 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>SwipeXiv - In Review Papers</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 50px; }
-        .nav { margin-bottom: 20px; }
-        .nav a { margin-right: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .actions { margin-bottom: 20px; }
-    </style>
-    <script>
-        function getSelectedLinks() {
-            var form = document.getElementById('papers-form');
-            var formData = new FormData(form);
-            formData.append('action', 'get_links');
-            fetch('/in_review_papers', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                var textarea = document.getElementById('paper-links');
-                textarea.value = data.links;
-                textarea.select();
-                document.execCommand('copy');
-                alert('Selected paper links copied to clipboard!');
-            });
-        }
-
-        function toggleSelectAll(checkbox) {
-            var checkboxes = document.querySelectorAll('input[name="selected_papers"]');
-            checkboxes.forEach(function(cb) {
-                cb.checked = checkbox.checked;
-            });
-        }
-    </script>
-</head>
-<body>
-    <div class="nav">
-        <a href="/">Home</a>
-        <a href="/unread_papers">Unread Papers</a>
-        <a href="/in_review_papers">In Review Papers</a>
-        <a href="/read_papers">Read Papers</a>
+{% extends "base.html" %}
+{% block title %}In Review Papers{% endblock %}
+{% block content %}
+<h1>In Review Papers</h1>
+<form id="papers-form" method="post">
+    <div class="actions mb-3">
+        <button type="submit" name="action" value="move_to_read" class="btn btn-primary">Move to Read</button>
+        <button type="submit" name="action" value="move_to_unread" class="btn btn-secondary">Move to Unread</button>
+        <button type="button" onclick="getSelectedLinks()" class="btn btn-secondary">Copy Abstract Links</button>
     </div>
-    <h1>In Review Papers</h1>
-    <form id="papers-form" method="post">
-        <div class="actions">
-            <button type="submit" name="action" value="move_to_read">Move to Read</button>
-            <button type="submit" name="action" value="move_to_unread">Move to Unread</button>
-            <button type="button" onclick="getSelectedLinks()">Copy Abstract Links</button>
-        </div>
-        <table>
+    <table class="table table-striped">
+        <thead>
             <tr>
                 <th><input type="checkbox" onclick="toggleSelectAll(this)"></th>
                 <th>Title</th>
                 <th>Link</th>
             </tr>
+        </thead>
+        <tbody>
             {% for paper in papers %}
             <tr>
                 <td><input type="checkbox" name="selected_papers" value="{{ paper.paper_id }}"></td>
@@ -65,9 +24,38 @@
                 <td><a href="{{ paper.link }}" target="_blank">View Abstract</a></td>
             </tr>
             {% endfor %}
-        </table>
-        <textarea id="paper-links" readonly style="width:100%; height:100px;"></textarea>
-    </form>
-</body>
-</html>
+        </tbody>
+    </table>
+    <textarea id="paper-links" readonly class="form-control" style="height:100px;"></textarea>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+    // Same scripts as in unread_papers.html
+    function getSelectedLinks() {
+        var form = document.getElementById('papers-form');
+        var formData = new FormData(form);
+        formData.append('action', 'get_links');
+        fetch('/in_review_papers', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            var textarea = document.getElementById('paper-links');
+            textarea.value = data.links;
+            textarea.select();
+            document.execCommand('copy');
+            alert('Selected paper links copied to clipboard!');
+        });
+    }
+
+    function toggleSelectAll(checkbox) {
+        var checkboxes = document.querySelectorAll('input[name="selected_papers"]');
+        checkboxes.forEach(function(cb) {
+            cb.checked = checkbox.checked;
+        });
+    }
+</script>
+{% endblock %}
 

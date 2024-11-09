@@ -238,14 +238,9 @@ def read_papers_route():
 
     return render_template('read_papers.html', papers=read_papers)
 
-@app.route('/get_selected_papers')
-def get_selected_papers():
-    links = ' '.join([paper['link'] for paper in selected_papers])
-    return jsonify({'links': links})
-
-@app.route('/get_read_papers')
-def get_read_papers():
-    return jsonify({'papers': read_papers})
+@app.route('/settings', methods=['GET'])
+def settings():
+    return render_template('settings.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
