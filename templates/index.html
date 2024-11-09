@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>arXiv Paper Swiper</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 50px; }
+        #paper-container { max-width: 800px; margin: auto; }
+        #controls { margin-top: 20px; }
+        #controls button { padding: 10px 20px; margin: 5px; }
+        #selected-papers { margin-top: 40px; }
+        #paper-links { width: 100%; height: 100px; }
+    </style>
+</head>
+<body>
+    <div id="paper-container">
+        <h2 id="title">Loading...</h2>
+        <p id="summary"></p>
+        <p><a id="link" href="#" target="_blank">View on arXiv</a></p>
+    </div>
+    <div id="controls">
+        <button onclick="swipe('like')">Swipe Right (Interested)</button>
+        <button onclick="swipe('dislike')">Swipe Left (Not Interested)</button>
+    </div>
+    <div id="selected-papers">
+        <button onclick="getSelectedPapers()">Copy Selected Papers</button>
+        <textarea id="paper-links" readonly></textarea>
+    </div>
+    <script>
+        let start = 0;
+        function loadPaper() {
+            fetch(`/get_paper?start=${start}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    document.getElementById('title').innerText = data.title;
+                    document.getElementById('summary').innerText = data.summary;
+                    document.getElementById('link').href = data.link;
+                    document.getElementById('link').innerText = 'View on arXiv';
+                    document.getElementById('paper-container').dataset.paperId = data.paper_id;
+                    start = data.next_start;
+                } else {
+                    document.getElementById('title').innerText = 'No more papers to review.';
+                    document.getElementById('summary').innerText = '';
+                    document.getElementById('link').href = '#';
+                    document.getElementById('link').innerText = '';
+                    document.getElementById('controls').style.display = 'none';
+                }
+            });
+        }
+
+        function swipe(action) {
+            let paper_id = document.getElementById('paper-container').dataset.paperId;
+            fetch('/review_paper', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({'paper_id': paper_id, 'action': action})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    loadPaper();
+                }
+            });
+        }
+
+        function getSelectedPapers() {
+            fetch('/get_selected_papers')
+            .then(response => response.json())
+            .then(data => {
+                let textarea = document.getElementById('paper-links');
+                textarea.value = data.links;
+                textarea.select();
+                document.execCommand('copy');
+                alert('Selected papers copied to clipboard!');
+            });
+        }
+
+        window.onload = loadPaper;
+    </script>
+</body>
+</html>
+
