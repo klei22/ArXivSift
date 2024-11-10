@@ -49,7 +49,7 @@ With the rapid growth of AI research, staying up-to-date with the latest publica
 1. **Clone the Repository**
 
    ```bash
-   git clone https://github.com/yourusername/arxivsift.git
+   https://github.com/klei22/ArXivSift.git
    cd arxivsift
    ```
 
@@ -166,38 +166,7 @@ arxivsift/
 
 ## Contributing
 
-Contributions are welcome! To contribute:
-
-1. **Fork the Repository**: Click on "Fork" at the top of the GitHub page.
-
-2. **Clone Your Forked Repository**:
-
-   ```bash
-   git clone https://github.com/yourusername/arxivsift.git
-   cd arxivsift
-   ```
-
-3. **Create a New Branch**:
-
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-
-4. **Make Your Changes**: Implement your feature or fix.
-
-5. **Commit Your Changes**:
-
-   ```bash
-   git commit -am 'Add new feature'
-   ```
-
-6. **Push to Your Branch**:
-
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-
-7. **Submit a Pull Request**: Open a pull request on GitHub.
+Contributions are welcome!
 
 ## License
 
