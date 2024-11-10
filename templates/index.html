@@ -6,6 +6,7 @@
 <div id="paper-container" class="mt-4">
     <h2 id="paper-title"></h2>
     <p id="paper-summary"></p>
+    <!-- Buttons are optional; include them if you want both swipe and button controls -->
     <div class="mt-3">
         <button id="like-button" class="btn btn-success">Swipe Right</button>
         <button id="dislike-button" class="btn btn-danger">Swipe Left</button>
@@ -17,6 +18,12 @@
 {% block scripts %}
 <script>
 let start = 0;
+let touchstartX = 0;
+let touchendX = 0;
+let touchstartY = 0;
+let touchendY = 0;
+
+const threshold = 50; // Minimum distance for a swipe
 
 function getNextPaper() {
     // Show loading message
@@ -61,6 +68,7 @@ function displayPaper(paper) {
     document.getElementById('paper-container').style.display = 'block';
 }
 
+// Swipe action functions
 function sendReview(action) {
     fetch('/review_paper', {
         method: 'POST',
@@ -75,18 +83,73 @@ function sendReview(action) {
     })
     .then(response => response.json())
     .then(data => {
-        getNextPaper();
+        if (action === 'read') {
+            let paperId = window.currentPaper.paper_id.replace('http://', '');
+            window.location.href = `/view_paper/${paperId}`;
+        } else {
+            getNextPaper();
+        }
     });
 }
+
+function handleGesture() {
+    let deltaX = touchendX - touchstartX;
+    let deltaY = touchendY - touchstartY;
+
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        // Horizontal swipe
+        if (Math.abs(deltaX) > threshold) {
+            if (deltaX > 0) {
+                // Swipe Right - Like
+                sendReview('like');
+            } else {
+                // Swipe Left - Dislike
+                sendReview('dislike');
+            }
+        }
+    } else {
+        // Vertical swipe
+        if (Math.abs(deltaY) > threshold) {
+            if (deltaY > 0) {
+                // Swipe Down - In Review
+                sendReview('in_review');
+            } else {
+                // Swipe Up - Read Now
+                sendReview('read');
+            }
+        }
+    }
+}
+
+const paperContainer = document.getElementById('paper-container');
+
+paperContainer.addEventListener('touchstart', function(event) {
+    touchstartX = event.changedTouches[0].screenX;
+    touchstartY = event.changedTouches[0].screenY;
+}, false);
+
+paperContainer.addEventListener('touchend', function(event) {
+    touchendX = event.changedTouches[0].screenX;
+    touchendY = event.changedTouches[0].screenY;
+    handleGesture();
+}, false);
+
+// Optional: For mouse events on desktop
+paperContainer.addEventListener('mousedown', function(event) {
+    touchstartX = event.screenX;
+    touchstartY = event.screenY;
+}, false);
+
+paperContainer.addEventListener('mouseup', function(event) {
+    touchendX = event.screenX;
+    touchendY = event.screenY;
+    handleGesture();
+}, false);
 
 // Event listeners for buttons
 document.getElementById('like-button').onclick = () => sendReview('like');
 document.getElementById('dislike-button').onclick = () => sendReview('dislike');
-document.getElementById('read-button').onclick = () => {
-    sendReview('read');
-    let paperId = window.currentPaper.paper_id.replace('http://', '');
-    window.location.href = `/view_paper/${paperId}`;
-};
+document.getElementById('read-button').onclick = () => sendReview('read');
 document.getElementById('in-review-button').onclick = () => sendReview('in_review');
 
 // Initialize by fetching the first paper
