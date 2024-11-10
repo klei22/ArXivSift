@@ -456,5 +456,6 @@ def search():
     return render_template('search.html', settings=settings)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=8123, debug=True)
+
 
