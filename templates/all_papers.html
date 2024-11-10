@@ -12,7 +12,6 @@
             <tr>
                 <th><input type="checkbox" id="select_all"></th>
                 <th>Title</th>
-                <th>Status</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -20,30 +19,20 @@
             {% for paper in papers %}
             <tr>
                 <td><input type="checkbox" name="selected_papers" value="{{ paper.paper_id }}"></td>
-                <td>{{ paper.title }}</td>
                 <td>
                     {% if paper.status == 'unread' %}
-                        <span title="Unread">
-                            <i class="fas fa-bookmark"></i> Unread
-                        </span>
+                        <i class="fas fa-bookmark" style="color: blue;" title="Unread"></i>
                     {% elif paper.status == 'in_review' %}
-                        <span title="In Review">
-                            <i class="fas fa-hourglass-half"></i> In Review
-                        </span>
+                        <i class="fas fa-hourglass-half" style="color: orange;" title="In Review"></i>
                     {% elif paper.status == 'read' %}
-                        <span title="Read">
-                            <i class="fas fa-check-circle"></i> Read
-                        </span>
+                        <i class="fas fa-check-circle" style="color: green;" title="Read"></i>
                     {% elif paper.status == 'left_swiped' %}
-                        <span title="Swiped Left">
-                            <i class="fas fa-times-circle"></i> Swiped Left
-                        </span>
-                    {% else %}
-                        {{ paper.status }}
+                        <i class="fas fa-times-circle" style="color: red;" title="Swiped Left"></i>
                     {% endif %}
+                    {{ paper.title }}
                 </td>
                 <td>
-                    <a href="{{ url_for('view_paper', paper_id=paper.paper_id.replace('http://', '')) }}">View & Take Notes</a>
+                    <a href="{{ url_for('view_paper', paper_id=paper.paper_id.replace('http://', '')) }}">View &amp; Take Notes</a>
                 </td>
             </tr>
             {% endfor %}

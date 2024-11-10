@@ -3,7 +3,7 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 import requests
 import xml.etree.ElementTree as ET
 import json
-from PyPDF2 import PdfReader
+from pdfminer.high_level import extract_text  # Use pdfminer.six for PDF text extraction
 
 app = Flask(__name__)
 
@@ -422,11 +422,8 @@ def search():
                 pdf_path = os.path.join(PDF_DIR, f'{sanitized_id}.pdf')
                 if os.path.exists(pdf_path):
                     try:
-                        reader = PdfReader(pdf_path)
-                        text = ''
-                        for page in reader.pages:
-                            text += page.extract_text() or ''
-                        if keyword in text.lower():
+                        text = extract_text(pdf_path)
+                        if text and keyword in text.lower():
                             match_found = True
                     except Exception as e:
                         print(f"Error reading PDF {pdf_path}: {e}")

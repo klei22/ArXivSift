@@ -2,6 +2,7 @@
 {% block title %}Swipe Papers{% endblock %}
 {% block content %}
 <h1 class="mt-4">Swipe Papers</h1>
+<div id="loading-message" class="mt-4" style="display: none;">Loading...</div>
 <div id="paper-container" class="mt-4">
     <h2 id="paper-title"></h2>
     <p id="paper-summary"></p>
@@ -18,14 +19,22 @@
 let start = 0;
 
 function getNextPaper() {
+    // Show loading message
+    document.getElementById('loading-message').style.display = 'block';
+    document.getElementById('paper-container').style.display = 'none';
+
     fetch(`/get_paper?start=${start}`)
     .then(response => response.json())
     .then(data => {
+        // Hide loading message
+        document.getElementById('loading-message').style.display = 'none';
+
         if (data.status === 'ok') {
             displayPaper(data);
             start = data.next_start;
         } else {
             document.getElementById('paper-container').innerHTML = '<p>No more papers available.</p>';
+            document.getElementById('paper-container').style.display = 'block';
         }
     });
 }
@@ -47,6 +56,9 @@ function displayPaper(paper) {
 
     // Store current paper data
     window.currentPaper = paper;
+
+    // Show the paper container
+    document.getElementById('paper-container').style.display = 'block';
 }
 
 function sendReview(action) {
