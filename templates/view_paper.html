@@ -4,36 +4,59 @@
     <meta charset="UTF-8">
     <title>{{ paper.title }}</title>
     <style>
-        /* Remove margins and padding */
         html, body {
             margin: 0;
             padding: 0;
             height: 100%;
-            overflow: hidden;
             {% if settings.theme == 'hacker' %}
             background-color: #000000;
+            color: #00ff00;
+            font-family: "Courier New", Courier, monospace;
+            {% elif settings.dark_mode %}
+            background-color: #121212;
+            color: #e0e0e0;
             {% else %}
-            background-color: #000; /* Optional: black background */
+            background-color: #ffffff;
+            color: #000000;
             {% endif %}
         }
 
-        /* Full-screen PDF iframe */
-        #pdf-iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
+        #container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            -webkit-overflow-scrolling: touch; /* Enable momentum scrolling on iOS */
+            padding: 10px; /* Optional: Add padding for better aesthetics */
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .pdf-page {
+            margin: 10px auto;
+            display: block;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            max-width: 800px; /* Restrict the maximum width for better readability */
+            width: 100%;
+        }
+
+        iframe {
             width: 100%;
             height: 100%;
             border: none;
         }
 
-        /* Notes panel */
         #notes-panel {
             position: fixed;
             bottom: -100%; /* Hidden by default */
             left: 0;
             width: 100%;
-            height: 50%; /* Adjust height as needed */
+            height: 40%; /* Adjust height as needed */
             {% if settings.dark_mode %}
             background-color: #121212;
             color: #e0e0e0;
@@ -51,7 +74,6 @@
             flex-direction: column;
         }
 
-        /* Notes textarea */
         #notes-panel textarea {
             flex: 1;
             margin: 10px;
@@ -112,12 +134,30 @@
             background-color: #0056b3;
             {% endif %}
         }
+
+        /* Zoom Controls */
+        #zoom-controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1002;
+            display: none; /* Hidden by default, shown only on touch devices */
+        }
+
+        #zoom-controls button {
+            margin: 5px;
+            width: 40px;
+            height: 40px;
+            font-size: 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
     </style>
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.14.305/pdf.min.js"></script>
 </head>
 <body>
-
-    <!-- PDF Viewer -->
-    <iframe id="pdf-iframe" src="{{ url_for('serve_pdf', filename=pdf_filename) }}"></iframe>
+    <div id="container"></div>
 
     <!-- Notes Panel -->
     <div id="notes-panel">
@@ -125,23 +165,32 @@
     </div>
 
     <!-- Toggle Notes Button -->
-    <button id="toggle-notes-btn">Notes</button>
+    <button id="toggle-notes-btn" aria-label="Toggle Notes">Notes</button>
+
+    <!-- Zoom Controls (Visible Only on Touch Devices) -->
+    <div id="zoom-controls">
+        <button id="zoom-in" aria-label="Zoom In">+</button>
+        <button id="zoom-out" aria-label="Zoom Out">-</button>
+    </div>
 
     <script>
+        const container = document.getElementById('container');
         const notesPanel = document.getElementById('notes-panel');
         const toggleNotesBtn = document.getElementById('toggle-notes-btn');
         const notesTextarea = document.getElementById('notes');
+        const zoomControls = document.getElementById('zoom-controls');
+        const zoomInBtn = document.getElementById('zoom-in');
+        const zoomOutBtn = document.getElementById('zoom-out');
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
-        // Toggle notes panel visibility
-        function toggleNotes() {
+        // Toggle Notes Panel
+        toggleNotesBtn.addEventListener('click', () => {
             notesPanel.classList.toggle('show');
             // Focus on the textarea when the panel is shown
             if (notesPanel.classList.contains('show')) {
                 notesTextarea.focus();
             }
-        }
-
-        toggleNotesBtn.addEventListener('click', toggleNotes);
+        });
 
         // Auto-save notes after 1 second of inactivity
         let timeoutId;
@@ -162,7 +211,139 @@
                 if (data.status === 'saved') {
                     console.log('Notes saved.');
                 }
+            })
+            .catch(error => {
+                console.error('Error saving notes:', error);
             });
+        }
+
+        if (isTouchDevice) {
+            // Show Zoom Controls
+            zoomControls.style.display = 'block';
+
+            // Use PDF.js method for touch devices
+            const url = '{{ url_for('serve_pdf', filename=pdf_filename) }}';
+
+            // PDF.js worker
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.14.305/pdf.worker.min.js';
+
+            let currentScale = 2; // Initial scale factor
+            let pdfDoc = null;
+            let renderingQueue = [];
+
+            // Load PDF
+            const loadingTask = pdfjsLib.getDocument(url);
+            loadingTask.promise.then(async function(pdf) {
+                pdfDoc = pdf;
+                currentScale = await calculateScale(pdf, container.clientWidth * 0.95);
+                renderAllPages(pdf, currentScale);
+            }).catch(function(error) {
+                console.error('Error loading PDF:', error);
+                container.innerHTML = '<p>Failed to load PDF.</p>';
+            });
+
+            // Zoom In Function
+            zoomInBtn.addEventListener('click', () => {
+                currentScale += 0.5;
+                rerenderPDF();
+            });
+
+            // Zoom Out Function
+            zoomOutBtn.addEventListener('click', () => {
+                if (currentScale > 0.5) {
+                    currentScale -= 0.5;
+                    rerenderPDF();
+                }
+            });
+
+            // Debounce function to limit the rate of rerendering
+            function debounce(func, wait) {
+                let timeout;
+                return function(...args) {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), wait);
+                };
+            }
+
+            // Optional: If you decide to handle window resize without affecting pinch zoom
+            // window.addEventListener('resize', debounce(() => {
+            //     rerenderPDF();
+            // }, 300));
+
+            async function calculateScale(pdf, desiredWidth) {
+                // Fetch the first page to get its viewport at scale 1
+                try {
+                    const page = await pdf.getPage(1);
+                    const viewport = page.getViewport({ scale: 1 });
+                    const scale = desiredWidth / viewport.width;
+                    return scale * 2; // Increase scale factor by an additional factor of 2
+                } catch (error) {
+                    console.error('Error calculating scale:', error);
+                    return 2; // Fallback scale
+                }
+            }
+
+            function renderAllPages(pdf, scale) {
+                for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+                    renderPage(pdf, pageNumber, scale);
+                }
+            }
+
+            function renderPage(pdf, pageNumber, scale) {
+                pdf.getPage(pageNumber).then(function(page) {
+                    const viewport = page.getViewport({ scale: scale });
+                    const canvas = document.createElement('canvas');
+                    canvas.classList.add('pdf-page');
+                    const context = canvas.getContext('2d');
+
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+
+                    // Append canvas to container
+                    container.appendChild(canvas);
+
+                    // Render page
+                    const renderContext = {
+                        canvasContext: context,
+                        viewport: viewport
+                    };
+                    page.render(renderContext).promise.catch(function(error) {
+                        console.error(`Error rendering page ${pageNumber}:`, error);
+                    });
+                }).catch(function(error) {
+                    console.error(`Error fetching page ${pageNumber}:`, error);
+                });
+            }
+
+            function rerenderPDF() {
+                if (!pdfDoc) return;
+
+                // Prevent multiple rerenders
+                if (rerenderPDF.rerendering) return;
+                rerenderPDF.rerendering = true;
+
+                // Clear existing canvases
+                container.innerHTML = '';
+
+                // Recalculate scale
+                calculateScale(pdfDoc, container.clientWidth * 0.95).then(function(newScale) {
+                    currentScale = newScale;
+                    renderAllPages(pdfDoc, currentScale);
+                    rerenderPDF.rerendering = false;
+                }).catch(function(error) {
+                    console.error('Error during rerender:', error);
+                    container.innerHTML = '<p>Failed to load PDF.</p>';
+                    rerenderPDF.rerendering = false;
+                });
+            }
+
+        } else {
+            // Use iframe method for non-touch devices
+            const iframe = document.createElement('iframe');
+            iframe.src = '{{ url_for('serve_pdf', filename=pdf_filename) }}';
+            iframe.style.width = '100%';
+            iframe.style.height = '100%';
+            container.appendChild(iframe);
         }
     </script>
 </body>
