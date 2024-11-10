@@ -443,7 +443,15 @@ def search():
             if match_found:
                 results.append(paper)
 
-        return render_template('search_results.html', papers=results, keyword=keyword, settings=settings)
+        return render_template(
+            'search_results.html',
+            papers=results,
+            keyword=keyword,
+            settings=settings,
+            selected_papers=selected_papers,
+            in_review_papers=in_review_papers,
+            read_papers=read_papers
+        )
 
     return render_template('search.html', settings=settings)
 

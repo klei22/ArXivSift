@@ -7,27 +7,26 @@
         <thead>
             <tr>
                 <th>Title</th>
-                <th>Status</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for paper in papers %}
             <tr>
-                <td>{{ paper.title }}</td>
                 <td>
                     {% if paper in selected_papers %}
-                        Unread
+                        <i class="fas fa-bookmark" style="color: blue;" title="Unread"></i>
                     {% elif paper in in_review_papers %}
-                        In Review
+                        <i class="fas fa-hourglass-half" style="color: orange;" title="In Review"></i>
                     {% elif paper in read_papers %}
-                        Read
+                        <i class="fas fa-check-circle" style="color: green;" title="Read"></i>
                     {% else %}
-                        Unknown
+                        <!-- No icon for papers not in any category -->
                     {% endif %}
+                    {{ paper.title }}
                 </td>
                 <td>
-                    <a href="{{ url_for('view_paper', paper_id=paper.paper_id.replace('http://', '')) }}">View & Take Notes</a>
+                    <a href="{{ url_for('view_paper', paper_id=paper.paper_id.replace('http://', '')) }}">View &amp; Take Notes</a>
                 </td>
             </tr>
             {% endfor %}
@@ -36,5 +35,10 @@
 {% else %}
     <p>No papers found matching your search criteria.</p>
 {% endif %}
+
+<!-- Include Font Awesome for icons -->
+{% block scripts %}
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+{% endblock %}
 {% endblock %}
 
