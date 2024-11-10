@@ -1,54 +1,63 @@
-# SwipeXiv 📚✨ - Swipe Your Way Through Academic Papers
+# ArXivSift - 📚✨ - Efficiently Filter and Organize arXiv AI Papers
 
-[![SwipeXiv Demo](https://img.shields.io/badge/SwipeXiv-Demo-brightgreen)](#)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![arXiv](https://img.shields.io/badge/arXiv-Papers-red)](https://arxiv.org/)
-
-Discovering new research papers has never been this engaging! SwipeXiv brings a fresh and fun approach to browsing arXiv papers, allowing you to quickly sift through the latest findings and keep track of what matters to you.
+ArXivSift is built to help you efficiently navigate and manage the overwhelming
+number of AI papers on arXiv, providing tools to categorize and review papers
+according to your interests.
 
 ## Table of Contents
 
-- [What is SwipeXiv?](#what-is-swipexiv)
+- [Overview](#overview)
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
-- [Screenshots](#screenshots)
+  - [Swipe Interface](#swipe-interface)
+  - [Paper Categories](#paper-categories)
+  - [Viewing Papers and Taking Notes](#viewing-papers-and-taking-notes)
+- [Configuration](#configuration)
+- [Project Structure](#project-structure)
+- [Data Persistence](#data-persistence)
 - [Contributing](#contributing)
 - [License](#license)
 
-## What is SwipeXiv?
+## Overview
 
-SwipeXiv is an intuitive web application that lets you explore academic papers from [arXiv](https://arxiv.org/) with a swipe-based interface. Whether you're a researcher, student, or just curious, SwipeXiv makes it effortless to find and organize papers of interest.
+With the rapid growth of AI research, staying up-to-date with the latest publications can be challenging. ArXivSift streamlines this process by providing tools to:
+
+- **Efficiently browse new papers from arXiv.**
+- **Categorize papers based on your interest and review status.**
+- **Read papers in a focused, full-screen environment.**
+- **Take and save notes for each paper.**
 
 ## Features
 
-- 🚀 **Swipe Interface**: Quickly browse through papers with simple swipe actions.
-  - **Swipe Right** 👍: Mark a paper as interested.
-  - **Swipe Left** 👎: Skip papers that aren't relevant.
-  - **Swipe Up** 📖: Read the paper immediately.
-  - **Swipe Down** 🤔: Save papers for further review.
-- 📁 **Organize Papers**: Categorize papers into Unread, In Review, Read, and Disliked.
-- 📝 **Notes Panel**: Take notes while reading, with an auto-saving feature.
-- 🖥️ **Full-Screen PDF Viewer**: Read papers in a distraction-free environment.
-- 🔗 **Copy Links**: Easily copy abstract links for sharing or reference.
-- 💾 **Local Storage**: All data is stored locally on your machine for privacy and speed.
+- **Swipe-Based Browsing**: Quickly navigate through arXiv AI papers using intuitive swipe actions or buttons.
+- **Paper Categorization**: Organize papers into Unread, In Review, Read, and Disliked categories.
+- **Full-Screen PDF Viewer**: Read papers without distractions in a minimalist interface.
+- **Notes Panel**: Take notes while reading, with auto-saving functionality.
+- **Copy Abstract Links**: Easily copy links to paper abstracts for sharing or reference.
+- **Local Data Storage**: All data is stored locally on your machine.
 
 ## Installation
 
-Ready to dive in? Follow these steps to get SwipeXiv up and running:
+### Prerequisites
+
+- **Python 3.6 or higher**
+- **pip** package manager
+
+### Steps
 
 1. **Clone the Repository**
 
    ```bash
-   git clone https://github.com/yourusername/swipexiv.git
-   cd swipexiv
+   git clone https://github.com/yourusername/arxivsift.git
+   cd arxivsift
    ```
 
-2. **Set Up a Virtual Environment (Optional but Recommended)**
+2. **Create a Virtual Environment (Optional)**
 
    ```bash
    python3 -m venv venv
-   source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
 3. **Install Dependencies**
@@ -57,7 +66,7 @@ Ready to dive in? Follow these steps to get SwipeXiv up and running:
    pip install -r requirements.txt
    ```
 
-   *If `requirements.txt` is missing, install dependencies manually:*
+   *If `requirements.txt` is not available, install dependencies manually:*
 
    ```bash
    pip install flask requests
@@ -69,102 +78,126 @@ Ready to dive in? Follow these steps to get SwipeXiv up and running:
    python app.py
    ```
 
-   Open your browser and navigate to `http://127.0.0.1:5000/` to start using SwipeXiv!
+   Open your browser and navigate to `http://127.0.0.1:5000/` to start using ArXivSift.
 
 ## Usage
 
 ### Swipe Interface
 
-- **Access the Swipe Interface**: Go to the home page at `http://127.0.0.1:5000/`.
-- **Browsing Papers**: The app fetches the latest papers from arXiv in the `cs.AI` category by default.
-- **Swiping Actions**:
-  - **Swipe Right (Interested)** 👍: Adds the paper to your Unread list.
-  - **Swipe Left (Not Interested)** 👎: Moves the paper to the Disliked list.
-  - **Swipe Up (Read Now)** 📖: Opens the paper for immediate reading.
-  - **Swipe Down (In Review)** 🤔: Saves the paper for further consideration.
+- **Access the Home Page**: Go to `http://127.0.0.1:5000/`.
+- **Browsing Papers**: The app fetches the latest AI papers from arXiv.
+- **Actions**:
+  - **Interested**: Click "Swipe Right" or swipe right to mark a paper as interested (moves to Unread).
+  - **Not Interested**: Click "Swipe Left" or swipe left to dismiss a paper (moves to Disliked).
+  - **Read Now**: Click "Read Now" or swipe up to open the paper immediately.
+  - **In Review**: Click "Move to In Review" or swipe down to save the paper for later consideration.
 
-*Note: On desktops, use the buttons provided. On touch devices, swipe gestures are supported.*
+*Note: Swipe gestures are available on touch-enabled devices. Use buttons on desktops.*
 
-### Organizing Your Papers
+### Paper Categories
 
-Access different paper categories via the navigation menu:
+Access different categories from the navigation menu:
 
-- **Unread Papers** 📥: Papers you've marked as interested.
-- **In Review Papers** 🕒: Papers pending further evaluation.
-- **Read Papers** ✅: Papers you've read and possibly taken notes on.
-- **All Papers** 🗂️: A consolidated list of all papers you've interacted with.
+- **Unread Papers**: Papers you've marked as interested but haven't read yet.
+- **In Review Papers**: Papers you're considering for further review.
+- **Read Papers**: Papers you've read.
+- **All Papers**: View all papers you've interacted with.
+
+**Managing Papers:**
+
+- **Move Between Categories**: Select papers using checkboxes and choose an action to move them.
+- **Copy Abstract Links**: Select papers and click "Copy Abstract Links" to copy their arXiv links.
 
 ### Viewing Papers and Taking Notes
 
-- **Viewing a Paper**:
-  - From any list, click "View & Take Notes" to open the paper.
-- **Full-Screen PDF Viewer**:
-  - The paper opens in a full-screen PDF viewer for an immersive reading experience.
-- **Notes Panel** 📝:
-  - Click the floating "Notes" button at the bottom right corner.
-  - The notes panel slides up smoothly, allowing you to jot down thoughts.
-- **Auto-Save and Persistence**:
-  - Your notes are automatically saved as you type.
-  - Notes are stored locally and will be available when you return to the paper.
+- **Open a Paper**:
+  - In any category, click "View & Take Notes" next to a paper.
+- **Reading Interface**:
+  - The paper opens in a full-screen PDF viewer for focused reading.
+- **Taking Notes**:
+  - Click the "Notes" button at the bottom right to open the notes panel.
+  - Type your notes; they auto-save after a brief pause.
+- **Notes Persistence**:
+  - Your notes are saved locally and will be visible when you return to the paper.
 
-### Managing Papers
+## Configuration
 
-- **Moving Papers Between Categories**:
-  - Select papers using checkboxes in the lists.
-  - Use the action buttons to move papers to different categories.
-- **Copying Abstract Links** 🔗:
-  - Select papers and click "Copy Abstract Links" to copy their arXiv links.
-  - Useful for sharing or citing in your work.
+- **Change arXiv Category**:
+  - In `app.py`, modify the `search_query` parameter in the `/get_paper` route to fetch papers from a different category.
+  - Example: Change `cat:cs.AI` to `cat:stat.ML` for machine learning papers.
 
-## Screenshots
+## Project Structure
 
-*(Add screenshots to visually showcase the app's features.)*
+```
+arxivsift/
+├── app.py
+├── templates/
+│   ├── base.html
+│   ├── index.html
+│   ├── unread_papers.html
+│   ├── in_review_papers.html
+│   ├── read_papers.html
+│   ├── all_papers.html
+│   └── view_paper.html
+├── static/
+│   └── (Optional static files like CSS or JS)
+├── notes/
+│   └── (Stored notes files)
+├── pdfs/
+│   └── (Cached PDF files)
+├── reviewed_papers.json
+├── selected_papers.json
+├── in_review_papers.json
+├── read_papers.json
+└── left_swiped_papers.json
+```
 
-![Swipe Interface](screenshots/swipe_interface.png)
-*Swipe through papers quickly and intuitively.*
+- **app.py**: Main application file.
+- **templates/**: HTML templates for rendering pages.
+- **notes/**: Directory for storing notes.
+- **pdfs/**: Directory for caching PDF files.
+- **JSON Files**: Store categorized paper data.
 
-![Full-Screen PDF Viewer](screenshots/fullscreen_viewer.png)
-*Read papers in a distraction-free environment.*
+## Data Persistence
 
-![Notes Panel](screenshots/notes_panel.png)
-*Take notes that auto-save and persist.*
+- **Paper Data**: Stored in JSON files in the root directory.
+- **Notes**: Saved as text files in the `notes/` directory.
+- **PDFs**: Cached in the `pdfs/` directory to reduce repeated downloads.
 
 ## Contributing
 
-We welcome contributions! Here's how you can help:
+Contributions are welcome! To contribute:
 
-1. **Fork the Repository**
+1. **Fork the Repository**: Click on "Fork" at the top of the GitHub page.
 
-   Click the "Fork" button at the top right corner of the repository page.
-
-2. **Clone Your Fork**
+2. **Clone Your Forked Repository**:
 
    ```bash
-   git clone https://github.com/yourusername/swipexiv.git
-   cd swipexiv
+   git clone https://github.com/yourusername/arxivsift.git
+   cd arxivsift
    ```
 
-3. **Create a Feature Branch**
+3. **Create a New Branch**:
 
    ```bash
    git checkout -b feature/your-feature-name
    ```
 
-4. **Commit Your Changes**
+4. **Make Your Changes**: Implement your feature or fix.
+
+5. **Commit Your Changes**:
 
    ```bash
-   git commit -am 'Add a cool feature'
+   git commit -am 'Add new feature'
    ```
 
-5. **Push to Your Branch**
+6. **Push to Your Branch**:
 
    ```bash
    git push origin feature/your-feature-name
    ```
 
-6. **Open a Pull Request**
-
-   We'll review your PR and discuss any changes needed.
+7. **Submit a Pull Request**: Open a pull request on GitHub.
 
 ## License
 
