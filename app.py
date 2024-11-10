@@ -1,8 +1,9 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file
 import os
+from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file
 import requests
 import xml.etree.ElementTree as ET
 import json
+from PyPDF2 import PdfReader
 
 app = Flask(__name__)
 
@@ -33,13 +34,30 @@ in_review_papers = load_json(IN_REVIEW_PAPERS_FILE)
 read_papers = load_json(READ_PAPERS_FILE)
 left_swiped_papers = load_json(LEFT_SWIPED_PAPERS_FILE)
 
+# Load settings
+def load_settings():
+    if os.path.exists('settings.json'):
+        with open('settings.json', 'r') as f:
+            return json.load(f)
+    else:
+        return {
+            "dark_mode": False,
+            "theme": "default"
+        }
+
+def save_settings(settings):
+    with open('settings.json', 'w') as f:
+        json.dump(settings, f)
+
+settings = load_settings()
+
 # Function to sanitize paper IDs for filenames
 def sanitize_filename(filename):
     return filename.replace('/', '_').replace(':', '_')
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', settings=settings)
 
 @app.route('/get_paper')
 def get_paper():
@@ -180,7 +198,7 @@ def view_paper(paper_id):
                 notes = f.read()
         else:
             notes = ''
-        return render_template('view_paper.html', paper=paper, notes=notes, pdf_filename=f'{sanitized_id}.pdf')
+        return render_template('view_paper.html', paper=paper, notes=notes, pdf_filename=f'{sanitized_id}.pdf', settings=settings)
 
 @app.route('/pdf/<filename>')
 def serve_pdf(filename):
@@ -223,7 +241,7 @@ def unread_papers():
             return jsonify({'links': links})
         return redirect(url_for('unread_papers'))
 
-    return render_template('unread_papers.html', papers=selected_papers)
+    return render_template('unread_papers.html', papers=selected_papers, settings=settings)
 
 @app.route('/in_review_papers', methods=['GET', 'POST'])
 def in_review_papers_route():
@@ -262,7 +280,7 @@ def in_review_papers_route():
             return jsonify({'links': links})
         return redirect(url_for('in_review_papers_route'))
 
-    return render_template('in_review_papers.html', papers=in_review_papers)
+    return render_template('in_review_papers.html', papers=in_review_papers, settings=settings)
 
 @app.route('/read_papers', methods=['GET', 'POST'])
 def read_papers_route():
@@ -289,7 +307,7 @@ def read_papers_route():
             return jsonify({'links': links})
         return redirect(url_for('read_papers_route'))
 
-    return render_template('read_papers.html', papers=read_papers)
+    return render_template('read_papers.html', papers=read_papers, settings=settings)
 
 @app.route('/all_papers', methods=['GET', 'POST'])
 def all_papers():
@@ -359,11 +377,78 @@ def all_papers():
                 json.dump(in_review_papers, file)
         return redirect(url_for('all_papers'))
 
-    return render_template('all_papers.html', papers=all_papers)
+    return render_template('all_papers.html', papers=all_papers, settings=settings)
 
-@app.route('/settings', methods=['GET'])
-def settings():
-    return render_template('settings.html')
+@app.route('/settings', methods=['GET', 'POST'])
+def settings_page():
+    global settings
+    if request.method == 'POST':
+        dark_mode = 'dark_mode' in request.form
+        theme = request.form.get('theme', 'default')
+
+        settings['dark_mode'] = dark_mode
+        settings['theme'] = theme
+
+        save_settings(settings)
+
+        return redirect(url_for('settings_page'))
+
+    return render_template('settings.html', settings=settings)
+
+@app.route('/search', methods=['GET', 'POST'])
+def search():
+    global selected_papers, in_review_papers, read_papers
+
+    # Combine all papers except those in left_swiped_papers
+    papers = selected_papers + in_review_papers + read_papers
+
+    if request.method == 'POST':
+        keyword = request.form.get('keyword', '').lower()
+        search_pdf = 'search_pdf' in request.form
+        search_notes = 'search_notes' in request.form
+
+        results = []
+
+        for paper in papers:
+            match_found = False
+            paper_title = paper['title'].lower()
+            paper_id = paper['paper_id']
+
+            # Sanitize filename
+            sanitized_id = sanitize_filename(paper_id.replace('http://', ''))
+
+            # Search in PDF content
+            if search_pdf:
+                pdf_path = os.path.join(PDF_DIR, f'{sanitized_id}.pdf')
+                if os.path.exists(pdf_path):
+                    try:
+                        reader = PdfReader(pdf_path)
+                        text = ''
+                        for page in reader.pages:
+                            text += page.extract_text() or ''
+                        if keyword in text.lower():
+                            match_found = True
+                    except Exception as e:
+                        print(f"Error reading PDF {pdf_path}: {e}")
+                else:
+                    # PDF not downloaded yet
+                    pass
+
+            # Search in notes
+            if search_notes and not match_found:
+                notes_path = os.path.join(NOTES_DIR, f'{sanitized_id}.txt')
+                if os.path.exists(notes_path):
+                    with open(notes_path, 'r', encoding='utf-8') as f:
+                        notes = f.read()
+                    if keyword in notes.lower():
+                        match_found = True
+
+            if match_found:
+                results.append(paper)
+
+        return render_template('search_results.html', papers=results, keyword=keyword, settings=settings)
+
+    return render_template('search.html', settings=settings)
 
 if __name__ == '__main__':
     app.run(debug=True)

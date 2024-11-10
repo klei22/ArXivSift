@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Search Results{% endblock %}
+{% block content %}
+<h1 class="mt-4">Search Results for "{{ keyword }}"</h1>
+{% if papers %}
+    <table class="table table-striped table-hover mt-3">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for paper in papers %}
+            <tr>
+                <td>{{ paper.title }}</td>
+                <td>
+                    {% if paper in selected_papers %}
+                        Unread
+                    {% elif paper in in_review_papers %}
+                        In Review
+                    {% elif paper in read_papers %}
+                        Read
+                    {% else %}
+                        Unknown
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('view_paper', paper_id=paper.paper_id.replace('http://', '')) }}">View & Take Notes</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No papers found matching your search criteria.</p>
+{% endif %}
+{% endblock %}
+
