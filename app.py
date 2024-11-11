@@ -62,7 +62,7 @@ def index():
 @app.route('/get_paper')
 def get_paper():
     start = int(request.args.get('start', 0))
-    max_results = 1
+    max_results = 10  # Fetch multiple papers at once for efficiency
 
     while True:
         url = (
@@ -76,25 +76,39 @@ def get_paper():
         if not entries:
             return jsonify({'status': 'no_more_papers'})
 
-        paper = entries[0]
-        paper_id = paper.find('{http://www.w3.org/2005/Atom}id').text
+        # Filter out already reviewed papers
+        new_papers = []
+        for entry in entries:
+            paper_id = entry.find('{http://www.w3.org/2005/Atom}id').text
+            if paper_id not in reviewed_papers:
+                title = entry.find('{http://www.w3.org/2005/Atom}title').text.strip()
+                summary = entry.find('{http://www.w3.org/2005/Atom}summary').text.strip()
+                link = paper_id  # The ID is also the link to the paper
+                new_papers.append({
+                    'paper_id': paper_id,
+                    'title': title,
+                    'summary': summary,
+                    'link': link
+                })
+                if len(new_papers) >= 1:
+                    break  # Return one paper at a time
 
-        if paper_id in reviewed_papers:
-            start += 1
-            continue
-
-        title = paper.find('{http://www.w3.org/2005/Atom}title').text.strip()
-        summary = paper.find('{http://www.w3.org/2005/Atom}summary').text.strip()
-        link = paper_id  # The ID is also the link to the paper
-
-        return jsonify({
-            'status': 'ok',
-            'paper_id': paper_id,
-            'title': title,
-            'summary': summary,
-            'link': link,
-            'next_start': start + 1
-        })
+        if new_papers:
+            paper = new_papers[0]
+            return jsonify({
+                'status': 'ok',
+                'paper_id': paper['paper_id'],
+                'title': paper['title'],
+                'summary': paper['summary'],
+                'link': paper['link'],
+                'next_start': start + max_results
+            })
+        else:
+            # All fetched papers are reviewed, increment start and continue
+            start += max_results
+            # To prevent infinite loop, set a reasonable upper limit
+            if start > 1000:
+                return jsonify({'status': 'no_more_papers'})
 
 @app.route('/review_paper', methods=['POST'])
 def review_paper():
